@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          academic_level: string | null
+          created_at: string
+          deadline: string | null
+          document_type: Database["public"]["Enums"]["document_type"]
+          email: string
+          file_paths: string[]
+          full_name: string
+          id: string
+          instructions: string | null
+          pages: number | null
+          payment_method: string | null
+          phone: string
+          price_fcfa: number | null
+          status: Database["public"]["Enums"]["order_status"]
+          subject: string
+        }
+        Insert: {
+          academic_level?: string | null
+          created_at?: string
+          deadline?: string | null
+          document_type: Database["public"]["Enums"]["document_type"]
+          email: string
+          file_paths?: string[]
+          full_name: string
+          id?: string
+          instructions?: string | null
+          pages?: number | null
+          payment_method?: string | null
+          phone: string
+          price_fcfa?: number | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subject: string
+        }
+        Update: {
+          academic_level?: string | null
+          created_at?: string
+          deadline?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"]
+          email?: string
+          file_paths?: string[]
+          full_name?: string
+          id?: string
+          instructions?: string | null
+          pages?: number | null
+          payment_method?: string | null
+          phone?: string
+          price_fcfa?: number | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subject?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +76,18 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      document_type:
+        | "memoire_licence"
+        | "memoire_master"
+        | "rapport_stage"
+        | "correction"
+        | "autre"
+      order_status:
+        | "nouveau"
+        | "paiement_recu"
+        | "en_cours"
+        | "redaction"
+        | "livre"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +214,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      document_type: [
+        "memoire_licence",
+        "memoire_master",
+        "rapport_stage",
+        "correction",
+        "autre",
+      ],
+      order_status: [
+        "nouveau",
+        "paiement_recu",
+        "en_cours",
+        "redaction",
+        "livre",
+      ],
+    },
   },
 } as const
