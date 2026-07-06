@@ -53,10 +53,10 @@ function PaiementRetour() {
   useEffect(() => {
     if (!isFinal) return;
     const timer = setTimeout(() => {
-      navigate({ to: "/client" });
+      navigate({ to: "/client", search: order_id ? { order_id } : undefined });
     }, 5000);
     return () => clearTimeout(timer);
-  }, [isFinal, navigate]);
+  }, [isFinal, navigate, order_id]);
 
   return (
     <main className="min-h-screen bg-background">
