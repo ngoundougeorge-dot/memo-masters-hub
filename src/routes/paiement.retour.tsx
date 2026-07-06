@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { CheckCircle2, Clock, XCircle, ArrowLeft, Mail } from "lucide-react";
+import { useEffect } from "react";
 
 type PaiementSearch = {
   status?: "success" | "pending" | "failed" | string;
@@ -39,6 +40,23 @@ function PaiementRetour() {
   const { status, transaction_id, order_id, message } = Route.useSearch();
 
   const view = resolveView(status);
+  const navigate = useNavigate();
+
+  const isFinal =
+    status === "success" ||
+    status === "paid" ||
+    status === "ACCEPTED" ||
+    status === "failed" ||
+    status === "REFUSED" ||
+    status === "error";
+
+  useEffect(() => {
+    if (!isFinal) return;
+    const timer = setTimeout(() => {
+      navigate({ to: "/client" });
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [isFinal, navigate]);
 
   return (
     <main className="min-h-screen bg-background">
@@ -108,6 +126,12 @@ function PaiementRetour() {
             </a>
           </div>
         </div>
+
+        {isFinal && (
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Redirection automatique vers votre tableau de bord dans 5 secondes…
+          </p>
+        )}
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Conservez votre numéro de commande pour tout suivi de votre dossier.
