@@ -127,6 +127,12 @@ function PaiementRetour() {
           </div>
         </div>
 
+        {isFinal && (
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Redirection automatique vers votre tableau de bord dans 5 secondes…
+          </p>
+        )}
+
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Conservez votre numéro de commande pour tout suivi de votre dossier.
         </p>
