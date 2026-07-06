@@ -97,6 +97,15 @@ export default function OrderForm() {
         },
       });
       setDone(res.id);
+      try {
+        const raw = localStorage.getItem("memoirepro_orders");
+        const existing: string[] = raw ? JSON.parse(raw) : [];
+        if (!existing.includes(res.id)) {
+          localStorage.setItem("memoirepro_orders", JSON.stringify([...existing, res.id]));
+        }
+      } catch {
+        // ignore localStorage errors
+      }
       form.reset();
       setFiles([]);
       toast.success("Commande envoyée avec succès !");
