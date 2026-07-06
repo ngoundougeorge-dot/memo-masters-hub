@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { CheckCircle2, Clock, XCircle, ArrowLeft, Mail } from "lucide-react";
+import { useEffect } from "react";
 
 type PaiementSearch = {
   status?: "success" | "pending" | "failed" | string;
