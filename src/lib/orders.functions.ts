@@ -48,4 +48,29 @@ export const submitOrder = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     return { id: row.id };
+});
+
+const GetOrderInput = z.object({ orderId: z.string().uuid() });
+
+export const getOrderPublic = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => GetOrderInput.parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
+      .select("id, status, subject, document_type, created_at, price_fcfa, pages, deadline, payment_method")
+      .eq("id", data.orderId)
+      .single();
+    if (error) throw new Error(error.message);
+    return order as {
+      id: string;
+      status: string;
+      subject: string;
+      document_type: string;
+      created_at: string;
+      price_fcfa: number | null;
+      pages: number | null;
+      deadline: string | null;
+      payment_method: string | null;
+    };
   });
