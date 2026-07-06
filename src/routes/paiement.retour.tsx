@@ -40,6 +40,23 @@ function PaiementRetour() {
   const { status, transaction_id, order_id, message } = Route.useSearch();
 
   const view = resolveView(status);
+  const navigate = useNavigate();
+
+  const isFinal =
+    status === "success" ||
+    status === "paid" ||
+    status === "ACCEPTED" ||
+    status === "failed" ||
+    status === "REFUSED" ||
+    status === "error";
+
+  useEffect(() => {
+    if (!isFinal) return;
+    const timer = setTimeout(() => {
+      navigate({ to: "/client" });
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [isFinal, navigate]);
 
   return (
     <main className="min-h-screen bg-background">
