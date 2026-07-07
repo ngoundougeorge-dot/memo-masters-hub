@@ -220,7 +220,7 @@ function ClientDashboard() {
               Retour à l'accueil
             </Link>
           </div>
-        )}
+        ) : null}
       </div>
     </main>
   );
