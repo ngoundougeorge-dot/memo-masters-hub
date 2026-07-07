@@ -204,7 +204,6 @@ function ClientDashboard() {
         ) : null}
 
         {!order ? (
-        ) : (
           <div className="mt-10 rounded-xl border border-border bg-card p-12 text-center shadow-[var(--shadow-soft)]">
             <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
             <h3 className="mt-4 font-serif text-xl text-foreground">
