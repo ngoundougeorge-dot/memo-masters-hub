@@ -13,6 +13,7 @@ import {
 import { getOrderPublic } from "@/lib/orders.functions";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import OrderFilesUpload from "@/components/OrderFilesUpload";
 
 type ClientSearch = {
   order_id?: string;
