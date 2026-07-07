@@ -193,6 +193,17 @@ function ClientDashboard() {
               </div>
             </CardContent>
           </Card>
+        ) : null}
+
+        {order ? (
+          <OrderFilesUpload
+            orderId={order.id}
+            instructions={order.instructions}
+            existingCount={order.file_paths?.length ?? 0}
+          />
+        ) : null}
+
+        {!order ? (
         ) : (
           <div className="mt-10 rounded-xl border border-border bg-card p-12 text-center shadow-[var(--shadow-soft)]">
             <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
