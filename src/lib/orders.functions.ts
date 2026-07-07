@@ -58,7 +58,7 @@ export const getOrderPublic = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order, error } = await supabaseAdmin
       .from("orders")
-      .select("id, status, subject, document_type, created_at, price_fcfa, pages, deadline, payment_method")
+      .select("id, status, subject, document_type, created_at, price_fcfa, pages, deadline, payment_method, instructions, file_paths")
       .eq("id", data.orderId)
       .single();
     if (error) throw new Error(error.message);
@@ -72,5 +72,32 @@ export const getOrderPublic = createServerFn({ method: "POST" })
       pages: number | null;
       deadline: string | null;
       payment_method: string | null;
+      instructions: string | null;
+      file_paths: string[];
     };
+  });
+
+const AddFilesInput = z.object({
+  orderId: z.string().uuid(),
+  paths: z.array(z.string().min(1).max(500)).min(1).max(20),
+});
+
+export const addOrderFiles = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => AddFilesInput.parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: current, error: readErr } = await supabaseAdmin
+      .from("orders")
+      .select("file_paths")
+      .eq("id", data.orderId)
+      .single();
+    if (readErr) throw new Error(readErr.message);
+    const existing = (current?.file_paths ?? []) as string[];
+    const merged = Array.from(new Set([...existing, ...data.paths])).slice(0, 40);
+    const { error } = await supabaseAdmin
+      .from("orders")
+      .update({ file_paths: merged })
+      .eq("id", data.orderId);
+    if (error) throw new Error(error.message);
+    return { file_paths: merged };
   });

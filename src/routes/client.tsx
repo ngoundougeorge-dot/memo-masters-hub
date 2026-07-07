@@ -13,6 +13,7 @@ import {
 import { getOrderPublic } from "@/lib/orders.functions";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import OrderFilesUpload from "@/components/OrderFilesUpload";
 
 type ClientSearch = {
   order_id?: string;
@@ -192,7 +193,17 @@ function ClientDashboard() {
               </div>
             </CardContent>
           </Card>
-        ) : (
+        ) : null}
+
+        {order ? (
+          <OrderFilesUpload
+            orderId={order.id}
+            instructions={order.instructions}
+            existingCount={order.file_paths?.length ?? 0}
+          />
+        ) : null}
+
+        {!order ? (
           <div className="mt-10 rounded-xl border border-border bg-card p-12 text-center shadow-[var(--shadow-soft)]">
             <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
             <h3 className="mt-4 font-serif text-xl text-foreground">
@@ -209,7 +220,7 @@ function ClientDashboard() {
               Retour à l'accueil
             </Link>
           </div>
-        )}
+        ) : null}
       </div>
     </main>
   );
