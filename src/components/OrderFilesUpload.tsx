@@ -73,14 +73,20 @@ export default function OrderFilesUpload({
   orderId,
   instructions,
   existingCount,
+  locked,
+  submittedAt,
 }: {
   orderId: string;
   instructions: string | null;
   existingCount: number;
+  locked: boolean;
+  submittedAt: string | null;
 }) {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const addFiles = useServerFn(addOrderFiles);
+  const submitDocs = useServerFn(submitOrderDocuments);
   const qc = useQueryClient();
 
   const checklist = useMemo(
@@ -88,6 +94,7 @@ export default function OrderFilesUpload({
     [instructions, files, existingCount],
   );
   const blockingIssues = checklist.filter((c) => !c.ok);
+
 
   const onFiles = (list: FileList | null) => {
     if (!list) return;
