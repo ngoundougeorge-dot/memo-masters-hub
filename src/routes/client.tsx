@@ -22,6 +22,7 @@ type ClientSearch = {
 const TIMELINE = [
   { label: "Commande reçue", statuses: ["nouveau"], icon: Inbox },
   { label: "Paiement confirmé", statuses: ["paiement_recu"], icon: CreditCard },
+  { label: "Documents envoyés", statuses: ["documents_envoyes"], icon: Send },
   { label: "Rédaction en cours", statuses: ["en_cours", "redaction"], icon: PenTool },
   { label: "Document livré", statuses: ["livre"], icon: Package },
 ] as const;
@@ -29,10 +30,12 @@ const TIMELINE = [
 const STATUS_LABELS: Record<string, string> = {
   nouveau: "Paiement en attente",
   paiement_recu: "Payé",
+  documents_envoyes: "Documents envoyés",
   en_cours: "En préparation",
   redaction: "En rédaction",
   livre: "Livré",
 };
+
 
 function getStepState(orderStatus: string, stepIndex: number) {
   let currentStepIndex = -1;
