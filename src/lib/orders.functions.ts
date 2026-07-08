@@ -139,3 +139,23 @@ export const submitOrderDocuments = createServerFn({ method: "POST" })
     return { ok: true, already: false as const };
   });
 
+
+const ListWriterInput = z.object({ key: z.string().min(8).max(200) });
+
+export const listWriterOrders = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => ListWriterInput.parse(data))
+  .handler(async ({ data }) => {
+    const expected = process.env.WRITER_ACCESS_KEY;
+    if (!expected || data.key !== expected) {
+      throw new Error("Accès refusé");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("orders")
+      .select("id, full_name, email, subject, document_type, status, price_fcfa, pages, deadline, created_at, documents_submitted_at, file_paths")
+      .order("documents_submitted_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
