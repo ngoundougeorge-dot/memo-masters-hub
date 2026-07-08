@@ -58,7 +58,7 @@ export const getOrderPublic = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order, error } = await supabaseAdmin
       .from("orders")
-      .select("id, status, subject, document_type, created_at, price_fcfa, pages, deadline, payment_method, instructions, file_paths")
+      .select("id, status, subject, document_type, created_at, price_fcfa, pages, deadline, payment_method, instructions, file_paths, documents_submitted_at")
       .eq("id", data.orderId)
       .single();
     if (error) throw new Error(error.message);
@@ -74,8 +74,10 @@ export const getOrderPublic = createServerFn({ method: "POST" })
       payment_method: string | null;
       instructions: string | null;
       file_paths: string[];
+      documents_submitted_at: string | null;
     };
   });
+
 
 const AddFilesInput = z.object({
   orderId: z.string().uuid(),
