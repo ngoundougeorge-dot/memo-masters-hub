@@ -205,8 +205,11 @@ function ClientDashboard() {
             orderId={order.id}
             instructions={order.instructions}
             existingCount={order.file_paths?.length ?? 0}
+            locked={Boolean(order.documents_submitted_at)}
+            submittedAt={order.documents_submitted_at}
           />
         ) : null}
+
 
         {!order ? (
           <div className="mt-10 rounded-xl border border-border bg-card p-12 text-center shadow-[var(--shadow-soft)]">
