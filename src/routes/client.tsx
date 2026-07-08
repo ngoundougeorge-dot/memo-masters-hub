@@ -59,6 +59,9 @@ function statusBadgeClass(status: string) {
       return "bg-amber-100 text-amber-700 border-amber-200";
     case "paiement_recu":
       return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    case "documents_envoyes":
+      return "bg-indigo-100 text-indigo-700 border-indigo-200";
+
     case "en_cours":
       return "bg-sky-100 text-sky-700 border-sky-200";
     case "redaction":
