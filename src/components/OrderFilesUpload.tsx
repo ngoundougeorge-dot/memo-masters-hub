@@ -2,15 +2,16 @@ import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Upload, FileText, X, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileText, X, Loader2, CheckCircle2, AlertCircle, Lock, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { addOrderFiles } from "@/lib/orders.functions";
+import { addOrderFiles, submitOrderDocuments } from "@/lib/orders.functions";
 
 const MAX_SIZE = 15 * 1024 * 1024;
 const ALLOWED = [".pdf", ".doc", ".docx", ".odt", ".txt", ".png", ".jpg", ".jpeg", ".webp"];
+
 
 type ChecklistItem = { label: string; ok: boolean; hint?: string };
 
