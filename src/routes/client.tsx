@@ -8,7 +8,9 @@ import {
   Package,
   CheckCircle2,
   ArrowLeft,
+  Send,
 } from "lucide-react";
+
 
 import { getOrderPublic } from "@/lib/orders.functions";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +24,7 @@ type ClientSearch = {
 const TIMELINE = [
   { label: "Commande reçue", statuses: ["nouveau"], icon: Inbox },
   { label: "Paiement confirmé", statuses: ["paiement_recu"], icon: CreditCard },
+  { label: "Documents envoyés", statuses: ["documents_envoyes"], icon: Send },
   { label: "Rédaction en cours", statuses: ["en_cours", "redaction"], icon: PenTool },
   { label: "Document livré", statuses: ["livre"], icon: Package },
 ] as const;
@@ -29,10 +32,12 @@ const TIMELINE = [
 const STATUS_LABELS: Record<string, string> = {
   nouveau: "Paiement en attente",
   paiement_recu: "Payé",
+  documents_envoyes: "Documents envoyés",
   en_cours: "En préparation",
   redaction: "En rédaction",
   livre: "Livré",
 };
+
 
 function getStepState(orderStatus: string, stepIndex: number) {
   let currentStepIndex = -1;
@@ -54,6 +59,9 @@ function statusBadgeClass(status: string) {
       return "bg-amber-100 text-amber-700 border-amber-200";
     case "paiement_recu":
       return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    case "documents_envoyes":
+      return "bg-indigo-100 text-indigo-700 border-indigo-200";
+
     case "en_cours":
       return "bg-sky-100 text-sky-700 border-sky-200";
     case "redaction":
@@ -200,8 +208,11 @@ function ClientDashboard() {
             orderId={order.id}
             instructions={order.instructions}
             existingCount={order.file_paths?.length ?? 0}
+            locked={Boolean(order.documents_submitted_at)}
+            submittedAt={order.documents_submitted_at}
           />
         ) : null}
+
 
         {!order ? (
           <div className="mt-10 rounded-xl border border-border bg-card p-12 text-center shadow-[var(--shadow-soft)]">

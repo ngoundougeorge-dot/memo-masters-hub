@@ -58,7 +58,7 @@ export const getOrderPublic = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order, error } = await supabaseAdmin
       .from("orders")
-      .select("id, status, subject, document_type, created_at, price_fcfa, pages, deadline, payment_method, instructions, file_paths")
+      .select("id, status, subject, document_type, created_at, price_fcfa, pages, deadline, payment_method, instructions, file_paths, documents_submitted_at")
       .eq("id", data.orderId)
       .single();
     if (error) throw new Error(error.message);
@@ -74,8 +74,10 @@ export const getOrderPublic = createServerFn({ method: "POST" })
       payment_method: string | null;
       instructions: string | null;
       file_paths: string[];
+      documents_submitted_at: string | null;
     };
   });
+
 
 const AddFilesInput = z.object({
   orderId: z.string().uuid(),
@@ -88,10 +90,13 @@ export const addOrderFiles = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: current, error: readErr } = await supabaseAdmin
       .from("orders")
-      .select("file_paths")
+      .select("file_paths, documents_submitted_at")
       .eq("id", data.orderId)
       .single();
     if (readErr) throw new Error(readErr.message);
+    if (current?.documents_submitted_at) {
+      throw new Error("Les documents ont déjà été soumis et sont verrouillés.");
+    }
     const existing = (current?.file_paths ?? []) as string[];
     const merged = Array.from(new Set([...existing, ...data.paths])).slice(0, 40);
     const { error } = await supabaseAdmin
@@ -101,3 +106,36 @@ export const addOrderFiles = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { file_paths: merged };
   });
+
+const SubmitDocsInput = z.object({ orderId: z.string().uuid() });
+
+export const submitOrderDocuments = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => SubmitDocsInput.parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order, error: readErr } = await supabaseAdmin
+      .from("orders")
+      .select("id, full_name, email, subject, file_paths, documents_submitted_at, status")
+      .eq("id", data.orderId)
+      .single();
+    if (readErr) throw new Error(readErr.message);
+    if (order.documents_submitted_at) {
+      return { ok: true, already: true as const };
+    }
+    if (!order.file_paths || order.file_paths.length === 0) {
+      throw new Error("Ajoutez au moins un document avant de soumettre.");
+    }
+    const now = new Date().toISOString();
+    const { error } = await supabaseAdmin
+      .from("orders")
+      .update({ status: "documents_envoyes", documents_submitted_at: now })
+      .eq("id", data.orderId);
+    if (error) throw new Error(error.message);
+
+    // Notification rédacteur (log serveur — à brancher sur email/Slack si besoin)
+    console.log(
+      `[notification rédacteur] Commande ${order.id} — ${order.full_name} (${order.email}) a soumis ${order.file_paths.length} document(s). Sujet : ${order.subject}`,
+    );
+    return { ok: true, already: false as const };
+  });
+

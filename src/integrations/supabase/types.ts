@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           deadline: string | null
           document_type: Database["public"]["Enums"]["document_type"]
+          documents_submitted_at: string | null
           email: string
           file_paths: string[]
           full_name: string
@@ -37,6 +38,7 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           document_type: Database["public"]["Enums"]["document_type"]
+          documents_submitted_at?: string | null
           email: string
           file_paths?: string[]
           full_name: string
@@ -54,6 +56,7 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           document_type?: Database["public"]["Enums"]["document_type"]
+          documents_submitted_at?: string | null
           email?: string
           file_paths?: string[]
           full_name?: string
@@ -85,6 +88,7 @@ export type Database = {
       order_status:
         | "nouveau"
         | "paiement_recu"
+        | "documents_envoyes"
         | "en_cours"
         | "redaction"
         | "livre"
@@ -225,6 +229,7 @@ export const Constants = {
       order_status: [
         "nouveau",
         "paiement_recu",
+        "documents_envoyes",
         "en_cours",
         "redaction",
         "livre",
