@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RedacteurRouteImport } from './routes/redacteur'
 import { Route as ClientRouteImport } from './routes/client'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PaiementRetourRouteImport } from './routes/paiement.retour'
@@ -17,6 +18,11 @@ import { Route as PaiementRetourRouteImport } from './routes/paiement.retour'
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RedacteurRoute = RedacteurRouteImport.update({
+  id: '/redacteur',
+  path: '/redacteur',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClientRoute = ClientRouteImport.update({
@@ -38,12 +44,14 @@ const PaiementRetourRoute = PaiementRetourRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/client': typeof ClientRoute
+  '/redacteur': typeof RedacteurRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/paiement/retour': typeof PaiementRetourRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/client': typeof ClientRoute
+  '/redacteur': typeof RedacteurRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/paiement/retour': typeof PaiementRetourRoute
 }
@@ -51,20 +59,33 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/client': typeof ClientRoute
+  '/redacteur': typeof RedacteurRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/paiement/retour': typeof PaiementRetourRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/client' | '/sitemap.xml' | '/paiement/retour'
+  fullPaths:
+    | '/'
+    | '/client'
+    | '/redacteur'
+    | '/sitemap.xml'
+    | '/paiement/retour'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/client' | '/sitemap.xml' | '/paiement/retour'
-  id: '__root__' | '/' | '/client' | '/sitemap.xml' | '/paiement/retour'
+  to: '/' | '/client' | '/redacteur' | '/sitemap.xml' | '/paiement/retour'
+  id:
+    | '__root__'
+    | '/'
+    | '/client'
+    | '/redacteur'
+    | '/sitemap.xml'
+    | '/paiement/retour'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClientRoute: typeof ClientRoute
+  RedacteurRoute: typeof RedacteurRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   PaiementRetourRoute: typeof PaiementRetourRoute
 }
@@ -76,6 +97,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/redacteur': {
+      id: '/redacteur'
+      path: '/redacteur'
+      fullPath: '/redacteur'
+      preLoaderRoute: typeof RedacteurRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/client': {
@@ -105,6 +133,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClientRoute: ClientRoute,
+  RedacteurRoute: RedacteurRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   PaiementRetourRoute: PaiementRetourRoute,
 }
