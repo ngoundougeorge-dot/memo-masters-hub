@@ -140,6 +140,23 @@ export default function OrderFilesUpload({
     }
   };
 
+  const onSubmit = async () => {
+    if (existingCount === 0) {
+      toast.error("Envoyez au moins un document avant de le soumettre.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await submitDocs({ data: { orderId } });
+      toast.success("Documents soumis — le rédacteur a été notifié.");
+      await qc.invalidateQueries({ queryKey: ["order-public", orderId] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur lors de la soumission");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
       <div className="flex items-start justify-between gap-4">
@@ -152,49 +169,68 @@ export default function OrderFilesUpload({
         </div>
       </div>
 
-      <div className="mt-4 space-y-3">
-        <Label>Nouveaux fichiers</Label>
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-secondary/40 p-6 text-center transition hover:border-primary/40 hover:bg-secondary">
-          <Upload className="h-6 w-6 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            Cliquez ou glissez vos fichiers (PDF, Word, images — 15 Mo max)
-          </span>
-          <input
-            type="file"
-            multiple
-            accept={ALLOWED.join(",")}
-            className="hidden"
-            onChange={(e) => onFiles(e.target.files)}
-          />
-        </label>
+      {locked ? (
+        <div className="mt-4 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-medium">Documents verrouillés et transmis au rédacteur.</p>
+            <p className="mt-1 text-emerald-800/80">
+              Soumis le{" "}
+              {submittedAt
+                ? new Date(submittedAt).toLocaleString("fr-FR", {
+                    dateStyle: "long",
+                    timeStyle: "short",
+                  })
+                : "—"}
+              . Pour ajouter un document complémentaire, contactez-nous par WhatsApp.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 space-y-3">
+          <Label>Nouveaux fichiers</Label>
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-secondary/40 p-6 text-center transition hover:border-primary/40 hover:bg-secondary">
+            <Upload className="h-6 w-6 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              Cliquez ou glissez vos fichiers (PDF, Word, images — 15 Mo max)
+            </span>
+            <input
+              type="file"
+              multiple
+              accept={ALLOWED.join(",")}
+              className="hidden"
+              onChange={(e) => onFiles(e.target.files)}
+            />
+          </label>
 
-        {files.length > 0 && (
-          <ul className="space-y-1">
-            {files.map((f, i) => (
-              <li
-                key={i}
-                className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <span className="flex items-center gap-2 truncate">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{f.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    ({(f.size / 1024 / 1024).toFixed(1)} Mo)
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:text-destructive"
-                  onClick={() => setFiles(files.filter((_, j) => j !== i))}
-                  aria-label={`Retirer ${f.name}`}
+          {files.length > 0 && (
+            <ul className="space-y-1">
+              {files.map((f, i) => (
+                <li
+                  key={i}
+                  className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm"
                 >
-                  <X className="h-4 w-4" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+                  <span className="flex items-center gap-2 truncate">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="truncate">{f.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({(f.size / 1024 / 1024).toFixed(1)} Mo)
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => setFiles(files.filter((_, j) => j !== i))}
+                    aria-label={`Retirer ${f.name}`}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       <div className="mt-6 rounded-lg border border-border/70 bg-muted/20 p-4">
         <div className="flex items-center gap-2">
@@ -232,21 +268,57 @@ export default function OrderFilesUpload({
         ) : null}
       </div>
 
-      <Button
-        type="button"
-        className="mt-6 w-full"
-        onClick={onUpload}
-        disabled={uploading || files.length === 0}
-      >
-        {uploading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Envoi en cours…
-          </>
-        ) : (
-          `Envoyer ${files.length > 0 ? `${files.length} fichier(s)` : "les documents"}`
-        )}
-      </Button>
+      {!locked && (
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={onUpload}
+            disabled={uploading || submitting || files.length === 0}
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Envoi en cours…
+              </>
+            ) : (
+              `Ajouter ${files.length > 0 ? `${files.length} fichier(s)` : "des fichiers"}`
+            )}
+          </Button>
+          <Button
+            type="button"
+            className="flex-1"
+            onClick={onSubmit}
+            disabled={submitting || uploading || existingCount === 0 || files.length > 0}
+            title={
+              files.length > 0
+                ? "Envoyez d'abord les fichiers en attente"
+                : existingCount === 0
+                  ? "Ajoutez au moins un document"
+                  : undefined
+            }
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Soumission…
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-4 w-4" />
+                Soumettre mes documents
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+      {!locked && existingCount > 0 && files.length === 0 ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          En soumettant, vous verrouillez l'upload et notifiez le rédacteur.
+        </p>
+      ) : null}
     </div>
   );
 }
+
