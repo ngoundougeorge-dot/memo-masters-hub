@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Bell, FileText, Inbox, Loader2, Lock, ShieldAlert } from "lucide-react";
+import { Bell, ChevronDown, ChevronUp, CircleDot, FileText, Inbox, Loader2, Lock, ShieldAlert } from "lucide-react";
 
 import { listWriterOrders } from "@/lib/orders.functions";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,41 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+type OrderRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  subject: string;
+  document_type: string;
+  status: string;
+  price_fcfa: number | null;
+  pages: number | null;
+  deadline: string | null;
+  created_at: string;
+  documents_submitted_at: string | null;
+  file_paths: string[] | null;
+};
+
+function buildHistory(o: OrderRow) {
+  const events: { label: string; at: string }[] = [
+    { label: "Commande reçue", at: o.created_at },
+  ];
+  if (["paiement_recu", "documents_envoyes", "en_cours", "redaction", "livre"].includes(o.status)) {
+    // paiement confirmé — pas d'horodatage dédié, on utilise created_at comme proxy si absent
+    events.push({ label: "Paiement confirmé", at: o.created_at });
+  }
+  if (o.documents_submitted_at) {
+    events.push({ label: "Documents soumis par le client", at: o.documents_submitted_at });
+  }
+  if (["en_cours", "redaction"].includes(o.status)) {
+    events.push({ label: "Rédaction démarrée", at: o.documents_submitted_at ?? o.created_at });
+  }
+  if (o.status === "livre") {
+    events.push({ label: "Document livré", at: o.documents_submitted_at ?? o.created_at });
+  }
+  return events;
+}
 
 const STORAGE_KEY = "memoirepro:writer_key";
 
@@ -42,6 +77,16 @@ function WriterDashboard() {
   const [accessKey, setAccessKey] = useState<string>("");
   const [input, setInput] = useState("");
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
@@ -270,6 +315,45 @@ function WriterDashboard() {
                           timeStyle: "short",
                         })}
                       </span>
+                    )}
+                  </div>
+
+                  <div className="mt-4 border-t border-border pt-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(o.id)}
+                      className="flex w-full items-center justify-between text-sm font-medium text-foreground hover:text-primary"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Bell className="h-4 w-4" />
+                        Historique des notifications
+                        <Badge variant="secondary" className="ml-1">
+                          {STATUS_LABEL[o.status] ?? o.status}
+                        </Badge>
+                      </span>
+                      {expanded.has(o.id) ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </button>
+                    {expanded.has(o.id) && (
+                      <ol className="mt-3 space-y-2">
+                        {buildHistory(o as OrderRow).map((ev, i) => (
+                          <li key={i} className="flex items-start gap-3 text-sm">
+                            <CircleDot className="mt-0.5 h-4 w-4 text-primary" />
+                            <div className="flex-1">
+                              <div className="font-medium text-foreground">{ev.label}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(ev.at).toLocaleString("fr-FR", {
+                                  dateStyle: "long",
+                                  timeStyle: "short",
+                                })}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
                     )}
                   </div>
                 </CardContent>
