@@ -121,17 +121,27 @@ function WriterDashboard() {
   );
 
   const markOneSeen = (id: string) => {
-    const next = new Set(seenIds);
-    next.add(id);
-    setSeenIds(next);
-    localStorage.setItem("memoirepro:writer_seen", JSON.stringify([...next]));
+    try {
+      const next = new Set(seenIds);
+      next.add(id);
+      setSeenIds(next);
+      localStorage.setItem("memoirepro:writer_seen", JSON.stringify([...next]));
+      toast.success("Notification marquée comme lue");
+    } catch {
+      toast.error("Impossible de marquer la notification comme lue");
+    }
   };
 
   const markAllSeen = () => {
-    const next = new Set(seenIds);
-    submitted.forEach((o) => next.add(o.id));
-    setSeenIds(next);
-    localStorage.setItem("memoirepro:writer_seen", JSON.stringify([...next]));
+    try {
+      const next = new Set(seenIds);
+      submitted.forEach((o) => next.add(o.id));
+      setSeenIds(next);
+      localStorage.setItem("memoirepro:writer_seen", JSON.stringify([...next]));
+      toast.success("Toutes les notifications sont marquées comme lues");
+    } catch {
+      toast.error("Impossible de marquer toutes les notifications comme lues");
+    }
   };
 
   if (!accessKey) {
