@@ -119,6 +119,13 @@ function WriterDashboard() {
     [submitted, seenIds],
   );
 
+  const markOneSeen = (id: string) => {
+    const next = new Set(seenIds);
+    next.add(id);
+    setSeenIds(next);
+    localStorage.setItem("memoirepro:writer_seen", JSON.stringify([...next]));
+  };
+
   const markAllSeen = () => {
     const next = new Set(seenIds);
     submitted.forEach((o) => next.add(o.id));
