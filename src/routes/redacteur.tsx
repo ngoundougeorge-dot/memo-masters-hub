@@ -240,13 +240,21 @@ function WriterDashboard() {
               Mise à jour automatique toutes les 15 secondes.
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => query.refetch()}>
-            {query.isFetching ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Actualiser"
+          <div className="flex items-center gap-2">
+            {unseen.length > 0 && (
+              <Button variant="secondary" size="sm" onClick={markAllSeen}>
+                <Bell className="mr-1 h-4 w-4" />
+                Tout marquer comme lu
+              </Button>
             )}
-          </Button>
+            <Button variant="outline" size="sm" onClick={() => query.refetch()}>
+              {query.isFetching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Actualiser"
+              )}
+            </Button>
+          </div>
         </div>
 
         {query.isError ? (
