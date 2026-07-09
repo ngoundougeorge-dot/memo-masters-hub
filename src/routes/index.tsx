@@ -340,7 +340,7 @@ function Home() {
           </div>
         </div>
         <div className="mx-auto mt-10 max-w-6xl border-t border-primary-foreground/20 px-4 pt-6 text-center text-xs opacity-70">
-          © {new Date().getFullYear()} MémoirePro. Tous droits réservés.
+          © 2026 MémoirePro. Tous droits réservés.
         </div>
       </footer>
     </div>
