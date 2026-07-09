@@ -317,6 +317,45 @@ function WriterDashboard() {
                       </span>
                     )}
                   </div>
+
+                  <div className="mt-4 border-t border-border pt-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(o.id)}
+                      className="flex w-full items-center justify-between text-sm font-medium text-foreground hover:text-primary"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Bell className="h-4 w-4" />
+                        Historique des notifications
+                        <Badge variant="secondary" className="ml-1">
+                          {STATUS_LABEL[o.status] ?? o.status}
+                        </Badge>
+                      </span>
+                      {expanded.has(o.id) ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </button>
+                    {expanded.has(o.id) && (
+                      <ol className="mt-3 space-y-2">
+                        {buildHistory(o as OrderRow).map((ev, i) => (
+                          <li key={i} className="flex items-start gap-3 text-sm">
+                            <CircleDot className="mt-0.5 h-4 w-4 text-primary" />
+                            <div className="flex-1">
+                              <div className="font-medium text-foreground">{ev.label}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(ev.at).toLocaleString("fr-FR", {
+                                  dateStyle: "long",
+                                  timeStyle: "short",
+                                })}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );
