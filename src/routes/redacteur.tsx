@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Bell, FileText, Inbox, Loader2, Lock, ShieldAlert } from "lucide-react";
+import { Bell, ChevronDown, ChevronUp, CircleDot, FileText, Inbox, Loader2, Lock, ShieldAlert } from "lucide-react";
 
 import { listWriterOrders } from "@/lib/orders.functions";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,41 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+type OrderRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  subject: string;
+  document_type: string;
+  status: string;
+  price_fcfa: number | null;
+  pages: number | null;
+  deadline: string | null;
+  created_at: string;
+  documents_submitted_at: string | null;
+  file_paths: string[] | null;
+};
+
+function buildHistory(o: OrderRow) {
+  const events: { label: string; at: string }[] = [
+    { label: "Commande reçue", at: o.created_at },
+  ];
+  if (["paiement_recu", "documents_envoyes", "en_cours", "redaction", "livre"].includes(o.status)) {
+    // paiement confirmé — pas d'horodatage dédié, on utilise created_at comme proxy si absent
+    events.push({ label: "Paiement confirmé", at: o.created_at });
+  }
+  if (o.documents_submitted_at) {
+    events.push({ label: "Documents soumis par le client", at: o.documents_submitted_at });
+  }
+  if (["en_cours", "redaction"].includes(o.status)) {
+    events.push({ label: "Rédaction démarrée", at: o.documents_submitted_at ?? o.created_at });
+  }
+  if (o.status === "livre") {
+    events.push({ label: "Document livré", at: o.documents_submitted_at ?? o.created_at });
+  }
+  return events;
+}
 
 const STORAGE_KEY = "memoirepro:writer_key";
 
