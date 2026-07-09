@@ -285,6 +285,16 @@ function WriterDashboard() {
                         <span className="font-mono text-xs text-muted-foreground">
                           {o.id.slice(0, 8)}
                         </span>
+                        {isNew && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-[11px] text-indigo-700 hover:bg-indigo-50 hover:text-indigo-900"
+                            onClick={() => markOneSeen(o.id)}
+                          >
+                            ✓ Marquer comme lu
+                          </Button>
+                        )}
                       </div>
                       <CardTitle className="mt-1 font-serif text-lg">{o.subject}</CardTitle>
                       <p className="mt-1 text-sm text-muted-foreground">
