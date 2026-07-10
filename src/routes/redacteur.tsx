@@ -96,6 +96,30 @@ function WriterDashboard() {
     if (initial) setAccessKey(initial);
   }, [search.key]);
 
+  useEffect(() => {
+    if (!accessKey) return;
+    let cancelled = false;
+    let channel: ReturnType<typeof import("@/integrations/supabase/client").supabase.channel> | null = null;
+    (async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      if (cancelled) return;
+      channel = supabase
+        .channel("writer_orders")
+        .on("broadcast", { event: "order_change" }, () => {
+          qc.invalidateQueries({ queryKey: ["writer-orders", accessKey] });
+        })
+        .subscribe();
+    })();
+    return () => {
+      cancelled = true;
+      if (channel) {
+        import("@/integrations/supabase/client").then(({ supabase }) => {
+          supabase.removeChannel(channel!);
+        });
+      }
+    };
+  }, [accessKey, qc]);
+
   const query = useQuery({
     queryKey: ["writer-orders", accessKey],
     queryFn: () => listWriterOrders({ data: { key: accessKey } }),
