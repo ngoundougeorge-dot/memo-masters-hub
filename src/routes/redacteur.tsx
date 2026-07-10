@@ -285,7 +285,7 @@ function WriterDashboard() {
 
         <div className="grid gap-4">
           {(query.data ?? []).map((o) => {
-            const isNew = o.status === "documents_envoyes" && !seenIds.has(o.id);
+            const isNew = o.status === "documents_envoyes" && !o.writer_seen_at;
             return (
               <Card
                 key={o.id}
