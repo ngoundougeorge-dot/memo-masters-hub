@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.broadcast_order_change() FROM PUBLIC, anon, authenticated;
