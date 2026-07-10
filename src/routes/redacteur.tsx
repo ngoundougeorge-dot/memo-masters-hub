@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Bell, ChevronDown, ChevronUp, CircleDot, FileText, Inbox, Loader2, Lock, ShieldAlert } from "lucide-react";
 
-import { listWriterOrders } from "@/lib/orders.functions";
+import { listWriterOrders, markWriterOrdersSeen } from "@/lib/orders.functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,7 @@ type OrderRow = {
   created_at: string;
   documents_submitted_at: string | null;
   file_paths: string[] | null;
+  writer_seen_at: string | null;
 };
 
 function buildHistory(o: OrderRow) {
