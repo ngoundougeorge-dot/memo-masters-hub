@@ -152,10 +152,38 @@ export const listWriterOrders = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("orders")
-      .select("id, full_name, email, subject, document_type, status, price_fcfa, pages, deadline, created_at, documents_submitted_at, file_paths")
+      .select("id, full_name, email, subject, document_type, status, price_fcfa, pages, deadline, created_at, documents_submitted_at, file_paths, writer_seen_at")
       .order("documents_submitted_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
     return rows ?? [];
+  });
+
+const MarkSeenInput = z.object({
+  key: z.string().min(8).max(200),
+  orderIds: z.array(z.string().uuid()).min(1).max(200).optional(),
+  all: z.boolean().optional(),
+});
+
+export const markWriterOrdersSeen = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => MarkSeenInput.parse(data))
+  .handler(async ({ data }) => {
+    const expected = process.env.WRITER_ACCESS_KEY;
+    if (!expected || data.key !== expected) {
+      throw new Error("Accès refusé");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const now = new Date().toISOString();
+    let q = supabaseAdmin.from("orders").update({ writer_seen_at: now });
+    if (data.all) {
+      q = q.eq("status", "documents_envoyes").is("writer_seen_at", null);
+    } else if (data.orderIds && data.orderIds.length > 0) {
+      q = q.in("id", data.orderIds);
+    } else {
+      throw new Error("Aucune commande à marquer.");
+    }
+    const { error, count } = await q.select("id", { count: "exact" });
+    if (error) throw new Error(error.message);
+    return { ok: true, count: count ?? 0, seen_at: now };
   });
