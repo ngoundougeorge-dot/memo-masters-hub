@@ -32,6 +32,7 @@ export type Database = {
           price_fcfa: number | null
           status: Database["public"]["Enums"]["order_status"]
           subject: string
+          writer_seen_at: string | null
         }
         Insert: {
           academic_level?: string | null
@@ -50,6 +51,7 @@ export type Database = {
           price_fcfa?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           subject: string
+          writer_seen_at?: string | null
         }
         Update: {
           academic_level?: string | null
@@ -68,6 +70,7 @@ export type Database = {
           price_fcfa?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           subject?: string
+          writer_seen_at?: string | null
         }
         Relationships: []
       }
