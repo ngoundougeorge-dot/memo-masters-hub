@@ -183,7 +183,7 @@ export const markWriterOrdersSeen = createServerFn({ method: "POST" })
     } else {
       throw new Error("Aucune commande à marquer.");
     }
-    const { error, count } = await q.select("id", { count: "exact" });
+    const { data: updated, error } = await q.select("id");
     if (error) throw new Error(error.message);
-    return { ok: true, count: count ?? 0, seen_at: now };
+    return { ok: true, count: updated?.length ?? 0, seen_at: now };
   });
