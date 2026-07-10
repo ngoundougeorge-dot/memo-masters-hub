@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Bell, ChevronDown, ChevronUp, CircleDot, FileText, Inbox, Loader2, Lock, ShieldAlert } from "lucide-react";
 
-import { listWriterOrders } from "@/lib/orders.functions";
+import { listWriterOrders, markWriterOrdersSeen } from "@/lib/orders.functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,7 @@ type OrderRow = {
   created_at: string;
   documents_submitted_at: string | null;
   file_paths: string[] | null;
+  writer_seen_at: string | null;
 };
 
 function buildHistory(o: OrderRow) {
@@ -75,9 +76,9 @@ const STATUS_LABEL: Record<string, string> = {
 
 function WriterDashboard() {
   const search = Route.useSearch();
+  const qc = useQueryClient();
   const [accessKey, setAccessKey] = useState<string>("");
   const [input, setInput] = useState("");
-  const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (id: string) => {
@@ -93,14 +94,6 @@ function WriterDashboard() {
     const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
     const initial = search.key || stored || "";
     if (initial) setAccessKey(initial);
-    const seenRaw = typeof window !== "undefined" ? localStorage.getItem("memoirepro:writer_seen") : null;
-    if (seenRaw) {
-      try {
-        setSeenIds(new Set(JSON.parse(seenRaw) as string[]));
-      } catch {
-        /* ignore */
-      }
-    }
   }, [search.key]);
 
   const query = useQuery({
@@ -116,33 +109,43 @@ function WriterDashboard() {
     [query.data],
   );
   const unseen = useMemo(
-    () => submitted.filter((o) => !seenIds.has(o.id)),
-    [submitted, seenIds],
+    () => submitted.filter((o) => !o.writer_seen_at),
+    [submitted],
   );
 
-  const markOneSeen = (id: string) => {
-    try {
-      const next = new Set(seenIds);
-      next.add(id);
-      setSeenIds(next);
-      localStorage.setItem("memoirepro:writer_seen", JSON.stringify([...next]));
-      toast.success("Notification marquée comme lue");
-    } catch {
-      toast.error("Impossible de marquer la notification comme lue");
-    }
-  };
+  const markMutation = useMutation({
+    mutationFn: (vars: { orderIds?: string[]; all?: boolean }) =>
+      markWriterOrdersSeen({ data: { key: accessKey, ...vars } }),
+    onMutate: async (vars) => {
+      await qc.cancelQueries({ queryKey: ["writer-orders", accessKey] });
+      const prev = qc.getQueryData<OrderRow[]>(["writer-orders", accessKey]);
+      const now = new Date().toISOString();
+      qc.setQueryData<OrderRow[]>(["writer-orders", accessKey], (rows) =>
+        (rows ?? []).map((r) => {
+          const match = vars.all
+            ? r.status === "documents_envoyes" && !r.writer_seen_at
+            : (vars.orderIds ?? []).includes(r.id);
+          return match ? { ...r, writer_seen_at: r.writer_seen_at ?? now } : r;
+        }),
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["writer-orders", accessKey], ctx.prev);
+      toast.error("Impossible de synchroniser la lecture sur le serveur");
+    },
+    onSuccess: (_data, vars) => {
+      toast.success(
+        vars.all
+          ? "Toutes les notifications sont marquées comme lues"
+          : "Notification marquée comme lue",
+      );
+      qc.invalidateQueries({ queryKey: ["writer-orders", accessKey] });
+    },
+  });
 
-  const markAllSeen = () => {
-    try {
-      const next = new Set(seenIds);
-      submitted.forEach((o) => next.add(o.id));
-      setSeenIds(next);
-      localStorage.setItem("memoirepro:writer_seen", JSON.stringify([...next]));
-      toast.success("Toutes les notifications sont marquées comme lues");
-    } catch {
-      toast.error("Impossible de marquer toutes les notifications comme lues");
-    }
-  };
+  const markOneSeen = (id: string) => markMutation.mutate({ orderIds: [id] });
+  const markAllSeen = () => markMutation.mutate({ all: true });
 
   if (!accessKey) {
     return (
@@ -282,7 +285,7 @@ function WriterDashboard() {
 
         <div className="grid gap-4">
           {(query.data ?? []).map((o) => {
-            const isNew = o.status === "documents_envoyes" && !seenIds.has(o.id);
+            const isNew = o.status === "documents_envoyes" && !o.writer_seen_at;
             return (
               <Card
                 key={o.id}
