@@ -108,14 +108,38 @@ function WriterDashboard() {
         .on(
           "broadcast",
           { event: "order_change" },
-          (message: { payload?: { id?: string; status?: string } }) => {
+          (message: {
+            payload?: {
+              id?: string;
+              status?: string;
+              writer_seen_at?: string | null;
+              documents_submitted_at?: string | null;
+            };
+          }) => {
             const payload = message.payload;
-            const current = qc.getQueryData<OrderRow[]>(["writer-orders", accessKey]);
-            const changed = current?.find((r) => r.id === payload?.id);
-            if (changed && payload?.status && changed.status !== payload.status) {
-              const label = STATUS_LABEL[payload.status] ?? payload.status;
-              toast.info(`Statut mis à jour : ${changed.subject} → ${label}`);
-            }
+            if (!payload?.id) return;
+
+            qc.setQueryData<OrderRow[]>(["writer-orders", accessKey], (current) => {
+              if (!current) return current;
+              return current.map((row) => {
+                if (row.id !== payload.id) return row;
+                const wasUnread = row.status === "documents_envoyes" && !row.writer_seen_at;
+                const next: OrderRow = {
+                  ...row,
+                  status: payload.status ?? row.status,
+                  writer_seen_at: payload.writer_seen_at ?? row.writer_seen_at,
+                  documents_submitted_at: payload.documents_submitted_at ?? row.documents_submitted_at,
+                };
+                const isNowRead = next.status === "documents_envoyes" && next.writer_seen_at;
+                if (wasUnread && isNowRead) {
+                  toast.success(`Notification lue pour : ${next.subject}`);
+                } else if (payload.status && row.status !== payload.status) {
+                  const label = STATUS_LABEL[payload.status] ?? payload.status;
+                  toast.info(`Statut mis à jour : ${next.subject} → ${label}`);
+                }
+                return next;
+              });
+            });
             qc.invalidateQueries({ queryKey: ["writer-orders", accessKey] });
           },
         )
