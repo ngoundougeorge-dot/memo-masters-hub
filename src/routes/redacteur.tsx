@@ -105,9 +105,20 @@ function WriterDashboard() {
       if (cancelled) return;
       channel = supabase
         .channel("writer_orders")
-        .on("broadcast", { event: "order_change" }, () => {
-          qc.invalidateQueries({ queryKey: ["writer-orders", accessKey] });
-        })
+        .on(
+          "broadcast",
+          { event: "order_change" },
+          (message: { payload?: { id?: string; status?: string } }) => {
+            const payload = message.payload;
+            const current = qc.getQueryData<OrderRow[]>(["writer-orders", accessKey]);
+            const changed = current?.find((r) => r.id === payload?.id);
+            if (changed && payload?.status && changed.status !== payload.status) {
+              const label = STATUS_LABEL[payload.status] ?? payload.status;
+              toast.info(`Statut mis à jour : ${changed.subject} → ${label}`);
+            }
+            qc.invalidateQueries({ queryKey: ["writer-orders", accessKey] });
+          },
+        )
         .subscribe();
     })();
     return () => {
