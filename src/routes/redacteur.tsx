@@ -108,10 +108,11 @@ function WriterDashboard() {
         .on(
           "broadcast",
           { event: "order_change" },
-          (payload: { id?: string; status?: string }) => {
+          (message: { payload?: { id?: string; status?: string } }) => {
+            const payload = message.payload;
             const current = qc.getQueryData<OrderRow[]>(["writer-orders", accessKey]);
-            const changed = current?.find((r) => r.id === payload.id);
-            if (changed && payload.status && changed.status !== payload.status) {
+            const changed = current?.find((r) => r.id === payload?.id);
+            if (changed && payload?.status && changed.status !== payload.status) {
               const label = STATUS_LABEL[payload.status] ?? payload.status;
               toast.info(`Statut mis à jour : ${changed.subject} → ${label}`);
             }
