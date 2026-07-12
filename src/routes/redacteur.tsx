@@ -100,6 +100,19 @@ function WriterDashboard() {
     if (!accessKey) return;
     let cancelled = false;
     let channel: ReturnType<typeof import("@/integrations/supabase/client").supabase.channel> | null = null;
+    const processedEventIds = new Set<string>();
+    const MAX_PROCESSED = 50;
+
+    const dedupeKey = (payload: {
+      event_id?: string;
+      id?: string;
+      status?: string;
+      writer_seen_at?: string | null;
+      documents_submitted_at?: string | null;
+    }) =>
+      payload.event_id ??
+      `${payload.id}:${payload.status}:${payload.writer_seen_at ?? "-"}:${payload.documents_submitted_at ?? "-"}`;
+
     (async () => {
       const { supabase } = await import("@/integrations/supabase/client");
       if (cancelled) return;
@@ -110,6 +123,7 @@ function WriterDashboard() {
           { event: "order_change" },
           (message: {
             payload?: {
+              event_id?: string;
               id?: string;
               status?: string;
               writer_seen_at?: string | null;
@@ -118,6 +132,14 @@ function WriterDashboard() {
           }) => {
             const payload = message.payload;
             if (!payload?.id) return;
+
+            const key = dedupeKey(payload);
+            if (processedEventIds.has(key)) return;
+            processedEventIds.add(key);
+            if (processedEventIds.size > MAX_PROCESSED) {
+              const first = processedEventIds.values().next().value;
+              if (first) processedEventIds.delete(first);
+            }
 
             qc.setQueryData<OrderRow[]>(["writer-orders", accessKey], (current) => {
               if (!current) return current;
