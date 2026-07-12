@@ -321,7 +321,7 @@ function Home() {
               Contact
             </h4>
             <ul className="mt-3 space-y-2 text-sm opacity-80">
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2" suppressHydrationWarning>
                 <Phone className="h-4 w-4" /> WhatsApp : +225 07 00 00 00 00
               </li>
               <li className="flex items-center gap-2">
