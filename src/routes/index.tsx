@@ -321,9 +321,14 @@ function Home() {
               Contact
             </h4>
             <ul className="mt-3 space-y-2 text-sm opacity-80">
-              <li className="flex items-center gap-2" suppressHydrationWarning>
-                <Phone className="h-4 w-4" /> WhatsApp : +225 07 00 00 00 00
+              <li className="flex items-center gap-2">
+                <Phone className="h-4 w-4" />
+                <span>WhatsApp :</span>
+                <a href="tel:+2250700000000" className="hover:underline">
+                  +225 07 00 00 00 00
+                </a>
               </li>
+
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4" /> contact@memoirepro.africa
               </li>
