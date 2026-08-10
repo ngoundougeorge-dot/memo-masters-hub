@@ -1,0 +1,38 @@
+{
+  "summary": "First-pass full e2e testing of MémoirePro. Backend: 20/20 pytest tests pass (auth, orders, files, writer, documents, AI SSE stream). Frontend: all critical flows verified end-to-end via Playwright — landing page, anonymous order submission, order tracking on /client, file upload + submit-documents (status transitions to documents_envoyes), registration -> /editeur (protected), AI chat streaming + ai-mode-outline + insert-response-btn, admin login -> /redacteur, writer key login lists orders, writer status update, mark-all, file download links, payment success page, PWA manifest.json + sw.js served with service worker registered. Two minor issues reported below.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "CORS", "issue": "allow_origins=[\"*\"] with allow_credentials=False is fine for JWT via Authorization header, but combined with the '*' wildcard prevents future cookie-based auth. Consider explicit origins if cookies are ever adopted."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Admin -> Redacteur dashboard", "issue": "After successful admin login the user is redirected to /redacteur, but the page always shows the writer-key entry form (component only checks localStorage 'mp_writer_key', ignoring the admin JWT). Backend already accepts admin role without key, so the dashboard should auto-load /writer/orders using the JWT when the user role is 'admin'. Currently admin must additionally enter the writer key to see orders.", "affected_selectors": ["writer-key-input", "writer-order-card"]}
+    ],
+    "design_issues": [
+      {"screen": "Console", "issues": ["React Router v6 future-flag warnings (v7_startTransition, v7_relativeSplatPath) - non-blocking; consider enabling future flags to silence."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "In /app/frontend/src/pages/Redacteur.js, when useAuth() user.role === 'admin', treat as authed and call /writer/orders without a key (backend already permits it). Currently admin is forced to type the writer key after login.",
+    "(Optional) Add v7 future flags to BrowserRouter to silence console warnings."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 573 lines — approaching the split threshold; consider modularising (routers/auth.py, routers/orders.py, routers/writer.py, routers/ai.py) as more features land.",
+    "put_object/get_object use blocking `requests` inside async endpoints (upload/download). Under load this will block the event loop; consider httpx.AsyncClient or running in a threadpool.",
+    "OrderInput.email is stored lowercased (good) but `document_type`/`academic_level` are free strings with no whitelist — future writer dashboard reporting may be affected.",
+    "Admin bootstrap in startup() properly re-hashes the password if changed — good idempotent seed.",
+    "bcrypt hash format confirmed ($2b$) via login-success on admin credentials."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100%", "frontend": "95%"},
+  "test_credentials": "Admin admin@memoirepro.africa / admin123 (works). Writer access key: redacteur-memoirepro-2026 (works). File /app/memory/test_credentials.md missing.",
+  "seed_data_creation": "Multiple test users (email test_<rand>@example.com / secret123 and user_<rand>@test.com / secret123). Several anonymous orders were created and one transitioned to documents_envoyes + en_cours during writer test.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend regression suite at /app/backend/tests/backend_test.py (pytest, junit at /app/test_reports/pytest/pytest_results.xml). To reproduce, run: REACT_APP_BACKEND_URL=<preview_url> pytest /app/backend/tests/backend_test.py -v. AI streaming test hits Claude Sonnet 4.6 and can take up to 30s. The admin->redacteur auto-load issue is the only functional gap.",
+  "rca of the issue": "Redacteur.js component only trusts localStorage 'mp_writer_key' to decide authed state. It does not inspect AuthContext, so admins logging in via /connexion land on a page that still asks for the writer key. Fix: in useEffect check user?.role==='admin' from useAuth() and setAuthed(true) with accessKey='' (or send Authorization header and drop key)."
+}
