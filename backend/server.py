@@ -4,11 +4,15 @@ load_dotenv()
 import os
 import uuid
 import secrets
+import asyncio
+import logging
+from io import BytesIO
 from datetime import datetime, timezone, timedelta
 
 import bcrypt
 import jwt
 import requests
+import resend
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, UploadFile, File, Form, Query, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
@@ -29,6 +33,18 @@ APP_NAME = "memoirepro"
 
 STORAGE_BASE = (os.environ.get("INTEGRATION_PROXY_URL") or "").strip() or "https://integrations.emergentagent.com"
 STORAGE_URL = STORAGE_BASE.rstrip("/") + "/objstore/api/v1/storage"
+
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
+SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "onboarding@resend.dev")
+WRITER_NOTIFY_EMAIL = os.environ.get("WRITER_NOTIFY_EMAIL", "").strip()
+
+logger = logging.getLogger("memoirepro")
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    _h = logging.StreamHandler()
+    _h.setFormatter(logging.Formatter("%(levelname)s:memoirepro:%(message)s"))
+    logger.addHandler(_h)
+    logger.propagate = False
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
@@ -143,6 +159,85 @@ async def optional_user(request: Request):
 
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
+
+
+# ---------------------------------------------------------------------------
+# Email notifications (Resend, graceful fallback to log)
+# ---------------------------------------------------------------------------
+STATUS_FR = {
+    "nouveau": "Paiement en attente", "paiement_recu": "Paiement confirmé",
+    "documents_envoyes": "Documents reçus", "en_cours": "En préparation",
+    "redaction": "Rédaction en cours", "livre": "Document livré",
+}
+
+
+def _email_html(title: str, body: str, footer: str = "") -> str:
+    return f"""
+    <div style="font-family:Inter,Arial,sans-serif;background:#f7f4ec;padding:24px">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e6e0d3">
+        <tr><td style="background:#1b3a2d;padding:20px 24px">
+          <span style="color:#c99a3f;font-size:20px;font-weight:700;font-family:Georgia,serif">MémoirePro</span>
+        </td></tr>
+        <tr><td style="padding:28px 24px">
+          <h1 style="margin:0 0 12px;font-size:20px;color:#1b3a2d;font-family:Georgia,serif">{title}</h1>
+          <div style="font-size:15px;line-height:1.7;color:#333">{body}</div>
+          {f'<p style="margin-top:20px;font-size:13px;color:#888">{footer}</p>' if footer else ''}
+        </td></tr>
+        <tr><td style="background:#f7f4ec;padding:16px 24px;font-size:12px;color:#999;text-align:center">
+          © 2026 MémoirePro — Rédaction académique pour l'Afrique francophone.
+        </td></tr>
+      </table>
+    </div>"""
+
+
+async def send_email(to: str, subject: str, html: str):
+    if not to:
+        return
+    if not RESEND_API_KEY:
+        logger.info(f"[email:simulation] to={to} subject={subject!r} (RESEND_API_KEY absent)")
+        return
+    try:
+        resend.api_key = RESEND_API_KEY
+        params = {"from": SENDER_EMAIL, "to": [to], "subject": subject, "html": html}
+        await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"[email:sent] to={to} subject={subject!r}")
+    except Exception as e:
+        logger.error(f"[email:error] to={to} err={e}")
+
+
+async def notify_status_change(order: dict, new_status: str):
+    label = STATUS_FR.get(new_status, new_status)
+    ref = order["id"][:8]
+    subject_client = f"MémoirePro — Commande {ref} : {label}"
+    body_client = (
+        f"Bonjour {order.get('full_name', '')},<br><br>"
+        f"Le statut de votre commande <strong>{ref}</strong> « {order.get('subject','')} » "
+        f"vient de passer à : <strong>{label}</strong>.<br><br>"
+        f"Vous pouvez suivre l'avancement dans votre espace client."
+    )
+    await send_email(order.get("email"), subject_client,
+                     _email_html("Mise à jour de votre commande", body_client,
+                                 "Conservez votre numéro de commande pour tout suivi."))
+    if WRITER_NOTIFY_EMAIL:
+        body_writer = (
+            f"La commande <strong>{ref}</strong> ({order.get('full_name','')} · {order.get('email','')}) "
+            f"est désormais au statut : <strong>{label}</strong>.<br>"
+            f"Sujet : {order.get('subject','')}"
+        )
+        await send_email(WRITER_NOTIFY_EMAIL, f"[Rédaction] {ref} → {label}",
+                         _email_html("Mise à jour commande (rédacteur)", body_writer))
+
+
+async def notify_documents_submitted(order: dict):
+    if WRITER_NOTIFY_EMAIL:
+        ref = order["id"][:8]
+        body = (
+            f"{order.get('full_name','')} ({order.get('email','')}) vient de soumettre "
+            f"{len(order.get('file_ids', []))} document(s) pour la commande <strong>{ref}</strong>.<br>"
+            f"Sujet : {order.get('subject','')}"
+        )
+        await send_email(WRITER_NOTIFY_EMAIL, f"[Rédaction] Nouveaux documents — {ref}",
+                         _email_html("Documents soumis par un client", body))
 
 
 # ---------------------------------------------------------------------------
@@ -355,6 +450,9 @@ async def submit_documents(data: SubmitDocsInput):
         {"id": data.order_id},
         {"$set": {"status": "documents_envoyes", "documents_submitted_at": now_iso()}},
     )
+    o["status"] = "documents_envoyes"
+    asyncio.create_task(notify_documents_submitted(o))
+    asyncio.create_task(notify_status_change(o, "documents_envoyes"))
     return {"ok": True, "already": False}
 
 
@@ -403,12 +501,16 @@ async def writer_mark_seen(data: MarkSeenInput, user=Depends(optional_user)):
 @api.post("/writer/update-status")
 async def writer_update_status(data: StatusUpdateInput, user=Depends(optional_user)):
     check_writer(data.key, user)
+    o = await db.orders.find_one({"id": data.order_id})
+    if not o:
+        raise HTTPException(status_code=404, detail="Commande introuvable")
     update = {"status": data.status}
     if data.price_fcfa is not None:
         update["price_fcfa"] = data.price_fcfa
-    res = await db.orders.update_one({"id": data.order_id}, {"$set": update})
-    if res.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Commande introuvable")
+    await db.orders.update_one({"id": data.order_id}, {"$set": update})
+    if o.get("status") != data.status:
+        o.update(update)
+        asyncio.create_task(notify_status_change(o, data.status))
     return {"ok": True}
 
 
@@ -455,6 +557,98 @@ async def update_document(doc_id: str, data: DocumentInput, user: dict = Depends
 async def delete_document(doc_id: str, user: dict = Depends(get_current_user)):
     await db.documents.delete_one({"id": doc_id, "user_id": user["id"]})
     return {"ok": True}
+
+
+def _safe_filename(title: str, ext: str) -> str:
+    base = "".join(c if c.isalnum() or c in " -_" else "_" for c in (title or "memoire")).strip() or "memoire"
+    return f"{base[:60]}.{ext}"
+
+
+def _build_docx(title: str, content: str) -> bytes:
+    from docx import Document
+    from docx.shared import Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    doc = Document()
+    style = doc.styles["Normal"]
+    style.font.name = "Calibri"
+    style.font.size = Pt(12)
+
+    h = doc.add_heading(title or "Mémoire", level=0)
+    h.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    for block in (content or "").split("\n"):
+        line = block.rstrip()
+        if not line:
+            doc.add_paragraph("")
+            continue
+        if line.startswith("### "):
+            doc.add_heading(line[4:], level=3)
+        elif line.startswith("## "):
+            doc.add_heading(line[3:], level=2)
+        elif line.startswith("# "):
+            doc.add_heading(line[2:], level=1)
+        elif line.lstrip().startswith(("- ", "* ")):
+            doc.add_paragraph(line.lstrip()[2:], style="List Bullet")
+        else:
+            p = doc.add_paragraph(line)
+            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    buf = BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
+def _build_pdf(title: str, content: str) -> bytes:
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
+    from reportlab.lib.colors import HexColor
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=2.5 * cm, bottomMargin=2.5 * cm,
+                            leftMargin=2.5 * cm, rightMargin=2.5 * cm)
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle("Title2", parent=styles["Title"], textColor=HexColor("#1b3a2d"), alignment=TA_CENTER, fontSize=22, spaceAfter=24)
+    body = ParagraphStyle("Body2", parent=styles["Normal"], fontSize=12, leading=18, alignment=TA_JUSTIFY, spaceAfter=8)
+    h1 = ParagraphStyle("H1", parent=styles["Heading1"], textColor=HexColor("#1b3a2d"), fontSize=16)
+    h2 = ParagraphStyle("H2", parent=styles["Heading2"], textColor=HexColor("#1b3a2d"), fontSize=14)
+
+    def esc(s):
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    flow = [Paragraph(esc(title or "Mémoire"), title_style)]
+    for line in (content or "").split("\n"):
+        line = line.rstrip()
+        if not line:
+            flow.append(Spacer(1, 8))
+        elif line.startswith("## "):
+            flow.append(Paragraph(esc(line[3:]), h2))
+        elif line.startswith("# "):
+            flow.append(Paragraph(esc(line[2:]), h1))
+        else:
+            flow.append(Paragraph(esc(line), body))
+    doc.build(flow)
+    return buf.getvalue()
+
+
+@api.get("/documents/{doc_id}/export")
+async def export_document(doc_id: str, format: str = Query("pdf"), user: dict = Depends(get_current_user)):
+    d = await db.documents.find_one({"id": doc_id, "user_id": user["id"]})
+    if not d:
+        raise HTTPException(status_code=404, detail="Document introuvable")
+    title, content = d.get("title", "Mémoire"), d.get("content", "")
+    if format == "docx":
+        data = await asyncio.to_thread(_build_docx, title, content)
+        media = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        fname = _safe_filename(title, "docx")
+    else:
+        data = await asyncio.to_thread(_build_pdf, title, content)
+        media = "application/pdf"
+        fname = _safe_filename(title, "pdf")
+    return Response(content=data, media_type=media,
+                    headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
 
 # ---------------------------------------------------------------------------

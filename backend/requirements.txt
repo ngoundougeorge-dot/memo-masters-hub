@@ -9,3 +9,6 @@ PyJWT==2.10.1
 requests==2.32.3
 python-multipart==0.0.20
 emergentintegrations
+python-docx==1.2.0
+reportlab==5.0.0
+resend==2.35.0

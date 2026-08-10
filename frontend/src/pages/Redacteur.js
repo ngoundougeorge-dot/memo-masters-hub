@@ -5,6 +5,7 @@ import { Bell, FileText, Inbox, Loader2, Lock, ShieldAlert, BookOpen, Download }
 import api, { apiErr, API } from "../lib/api";
 import { Button, Card, Badge, Input, Label, Select } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
+import ThemeToggle from "../components/ThemeToggle";
 
 const STORAGE_KEY = "mp_writer_key";
 const STATUS_LABEL = {
@@ -88,6 +89,7 @@ export default function Redacteur() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-2 font-serif text-xl font-semibold text-foreground"><BookOpen className="h-5 w-5 text-primary" /> MémoirePro · Rédaction</Link>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <div className="relative"><Bell className="h-5 w-5 text-muted-foreground" />{unseen.length > 0 && <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{unseen.length}</span>}</div>
             <Button variant="ghost" size="sm" data-testid="writer-logout" onClick={() => { localStorage.removeItem(STORAGE_KEY); setAccessKey(""); setAuthed(false); }}>Se déconnecter</Button>
           </div>

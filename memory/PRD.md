@@ -32,6 +32,13 @@ Tokens portés dans /app/frontend/src/index.css.
 - PWA : manifest.json, icônes, service worker (offline shell), bannière d'installation.
 - Tests : backend 100% (pytest), frontend flows validés (Playwright).
 
+## Iteration 2 (2026-06)
+- Export du document en Word (.docx, python-docx) et PDF (reportlab) depuis l'éditeur — génération non bloquante.
+- Notifications email (Resend) au client + rédacteur à chaque changement de statut et à la soumission des documents. RESEND_API_KEY vide → mode SIMULATION (log '[email:simulation]'), à activer avec une vraie clé.
+- Mode sombre : toggle persistant (localStorage 'mp_theme'), présent sur toutes les pages ; tokens .dark déjà en place.
+- Paiement Mobile Money : laissé en SIMULATION (aucun agrégateur choisi).
+- Tests : backend 25/25 pytest, frontend 100% (Playwright).
+
 ## Backlog / Next
 - P1: Notifications email/WhatsApp réelles à la soumission des documents (actuellement non branché).
 - P1: Intégration paiement Mobile Money réelle (page retour existe, provider non branché — MOCKED côté flux).

@@ -8,6 +8,7 @@ import {
 import api, { apiErr } from "../lib/api";
 import { Button, Card, Badge, Label } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
+import ThemeToggle from "../components/ThemeToggle";
 
 const TIMELINE = [
   { label: "Commande reçue", statuses: ["nouveau"], icon: Inbox },
@@ -203,6 +204,7 @@ export default function ClientDashboard() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-2 font-serif text-xl font-semibold text-foreground"><BookOpen className="h-5 w-5 text-primary" /> MémoirePro</Link>
           <nav className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
+            <ThemeToggle />
             {user && <button onClick={() => navigate("/editeur")} className="hover:text-foreground" data-testid="client-nav-editor">Éditeur IA</button>}
             {user ? (
               <button onClick={() => { logout(); navigate("/"); }} className="hover:text-foreground" data-testid="client-logout">Se déconnecter</button>

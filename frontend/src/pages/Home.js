@@ -8,6 +8,7 @@ import heroImg from "../assets/hero-thesis.jpg";
 import { Button } from "../components/ui";
 import OrderForm from "../components/OrderForm";
 import { useAuth } from "../context/AuthContext";
+import ThemeToggle from "../components/ThemeToggle";
 
 const pricing = [
   { title: "Rapport de stage", price: "40 000", unit: "à partir de", features: ["20–40 pages", "Sources citées", "Livré sous 7 jours", "Révisions incluses"] },
@@ -43,6 +44,7 @@ export default function Home() {
             <a href="#commander" className="hover:text-foreground">Commander</a>
           </nav>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {user ? (
               <>
                 <Button variant="ghost" size="sm" data-testid="nav-editor" onClick={() => navigate("/editeur")}>

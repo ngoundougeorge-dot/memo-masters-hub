@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  BookOpen, Plus, Trash2, Loader2, Send, Bot, Sparkles, ListTree, Wand2, Save, PanelRightClose, PanelRightOpen, FileText,
+  BookOpen, Plus, Trash2, Loader2, Send, Bot, Sparkles, ListTree, Wand2, Save, PanelRightClose, PanelRightOpen, FileText, Download,
 } from "lucide-react";
 import api, { apiErr, API } from "../lib/api";
 import { Button, Input, Textarea } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
+import ThemeToggle from "../components/ThemeToggle";
 
 const MODES = [
   { key: "improve", label: "Améliorer", icon: Wand2, prompt: "Améliore le texte de mon document." },
@@ -109,6 +110,28 @@ export default function Editor() {
   const onTitle = (e) => { setTitle(e.target.value); scheduleSave(e.target.value, content); };
   const onContent = (e) => { setContent(e.target.value); scheduleSave(title, e.target.value); };
 
+  const [exporting, setExporting] = useState(false);
+  const exportDoc = async (format) => {
+    if (!active) return;
+    setExporting(true);
+    try {
+      await save(title, content);
+      const resp = await api.get(`/documents/${active.id}/export?format=${format}`, { responseType: "blob" });
+      const url = URL.createObjectURL(resp.data);
+      const a = document.createElement("a");
+      a.href = url;
+      const ext = format === "docx" ? "docx" : "pdf";
+      a.download = `${(title || "memoire").replace(/[^\w\-]+/g, "_").slice(0, 60)}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`Export ${format === "docx" ? "Word" : "PDF"} téléchargé`);
+    } catch (e) {
+      toast.error("Échec de l'export");
+    } finally { setExporting(false); }
+  };
+
   const runAI = async (message, mode = "chat") => {
     if (streaming) return;
     setStreaming(true);
@@ -181,6 +204,7 @@ export default function Editor() {
         </div>
         <div className="flex items-center gap-2">
           <span className="hidden text-sm text-muted-foreground md:inline">{user?.name}</span>
+          <ThemeToggle />
           <Button variant="ghost" size="sm" data-testid="editor-nav-client" onClick={() => navigate("/client")}>Espace client</Button>
           <Button variant="ghost" size="sm" onClick={() => setShowAssistant((s) => !s)} data-testid="toggle-assistant">
             {showAssistant ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
@@ -217,6 +241,14 @@ export default function Editor() {
                 </Button>
               ))}
               <Button variant="ghost" size="sm" onClick={() => save(title, content)} data-testid="save-btn"><Save className="h-3.5 w-3.5" /> Enregistrer</Button>
+              <div className="ml-auto flex gap-2">
+                <Button variant="outline" size="sm" data-testid="export-pdf-btn" disabled={exporting} onClick={() => exportDoc("pdf")}>
+                  {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} PDF
+                </Button>
+                <Button variant="outline" size="sm" data-testid="export-docx-btn" disabled={exporting} onClick={() => exportDoc("docx")}>
+                  {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Word
+                </Button>
+              </div>
             </div>
           </div>
           <Textarea value={content} onChange={onContent} data-testid="doc-content"

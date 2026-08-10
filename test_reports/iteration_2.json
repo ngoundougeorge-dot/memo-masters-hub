@@ -1,0 +1,34 @@
+{
+  "summary": "Iteration 2 — validation of Export (PDF/DOCX), status-change notifications (simulation), and dark-mode toggle. Backend: 25/25 pytest tests pass, including 4 new export tests (auth required, PDF magic bytes %PDF, DOCX zip PK header, cross-user 404) and 1 notification-flow test (submit-documents + writer/update-status). Simulation email logs confirmed: '[email:simulation] to=... subject=... (RESEND_API_KEY absent)' emitted for both client and writer on each transition. Frontend Playwright: theme-toggle present on /, /editeur, /client, /redacteur; dark class toggles on <html>, persists in localStorage 'mp_theme' after reload. Editor Export PDF and Export Word both trigger real downloads (TEST_Export_M_moire.pdf / .docx). Admin login flows straight into /redacteur with 10 order-cards auto-loaded (previous iteration's admin-needs-key gap is FIXED). No critical bugs.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is now 767 lines — past the 700-line split threshold. Recommend splitting into routers/ (auth, orders, writer, documents, ai, export) and services/ (email, export_builder) before next feature iteration.",
+    "_build_docx / _build_pdf are CPU-bound and called on the async request thread. Under load this will block the event loop; consider await asyncio.to_thread(_build_pdf, ...).",
+    "notify_status_change / notify_documents_submitted are dispatched via asyncio.create_task without a handled exception path — errors will only surface via logs. Wrap the task in try/except to avoid 'Task exception was never retrieved' warnings when Resend is later enabled.",
+    "Export endpoint accepts any string as ?format — anything other than 'docx' silently returns PDF. Consider validating with a Literal['pdf','docx'] to return 400 on unknown formats.",
+    "Filename sanitizer _safe_filename converts accented characters to '_' (e.g., 'Mémoire' → 'M_moire'). Non-blocking but slightly ugly; consider unicodedata.normalize NFKD ASCII fold or keep unicode inside RFC 5987 filename*=UTF-8'' header."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Admin admin@memoirepro.africa / admin123 OK. Client etudiant@ex.com / secret1 OK (existing). Writer key redacteur-memoirepro-2026 OK.",
+  "seed_data_creation": "New test users test_<rand>@example.com/secret123, plus a few TEST_Export documents and orders with status transitions (documents_envoyes -> en_cours -> livre). All non-invasive.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Regression suite at /app/backend/tests/backend_test.py now covers Auth (5) + Orders (6) + Writer (4) + Documents (4) + Export (4) + Notifications (1) + AI SSE (1) = 25 tests, ~8s runtime. Run with: pytest /app/backend/tests/backend_test.py -v. Emails are and remain intentionally simulation-only (RESEND_API_KEY empty); verify via backend supervisor logs (grep 'email:simulation'). PDF/DOCX generation happens synchronously inside the async endpoint — flag for perf review if larger docs are added.",
+  "rca of the issue": "N/A — no bugs found this iteration. Iteration_1's admin-must-enter-writer-key gap has been resolved in Redacteur.js (admins now auto-load /writer/orders via JWT)."
+}

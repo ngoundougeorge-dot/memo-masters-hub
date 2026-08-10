@@ -184,6 +184,84 @@ class TestDocuments:
         assert r.status_code == 404
 
 
+# ---------------- Export (docx / pdf) ----------------
+class TestExport:
+    def test_export_requires_auth(self, s, new_user):
+        # Create a doc first
+        h = {"Authorization": f"Bearer {new_user['token']}"}
+        r = s.post(f"{API}/documents", json={"title": "TEST_Export", "content": "# Titre\n\nContenu de test."}, headers=h)
+        assert r.status_code == 200
+        doc_id = r.json()["id"]
+        TestExport.doc_id = doc_id
+
+        # No auth -> 401/403
+        r = s.get(f"{API}/documents/{doc_id}/export?format=pdf")
+        assert r.status_code in (401, 403)
+
+    def test_export_pdf(self, s, new_user):
+        h = {"Authorization": f"Bearer {new_user['token']}"}
+        r = s.get(f"{API}/documents/{TestExport.doc_id}/export?format=pdf", headers=h)
+        assert r.status_code == 200, r.text
+        assert r.headers["content-type"].startswith("application/pdf")
+        assert r.content[:4] == b"%PDF"
+        assert len(r.content) > 500
+
+    def test_export_docx(self, s, new_user):
+        h = {"Authorization": f"Bearer {new_user['token']}"}
+        r = s.get(f"{API}/documents/{TestExport.doc_id}/export?format=docx", headers=h)
+        assert r.status_code == 200, r.text
+        assert "wordprocessingml" in r.headers["content-type"]
+        # DOCX is a zip
+        assert r.content[:2] == b"PK"
+        assert len(r.content) > 500
+
+    def test_export_other_user_404(self, s, new_user):
+        # Register another user, try to export the first user's doc
+        email = f"test_{uuid.uuid4().hex[:8]}@example.com"
+        r = s.post(f"{API}/auth/register", json={"name": "Other", "email": email, "password": "secret123"})
+        assert r.status_code == 200
+        tok = r.json()["token"]
+        r = s.get(f"{API}/documents/{TestExport.doc_id}/export?format=pdf",
+                  headers={"Authorization": f"Bearer {tok}"})
+        assert r.status_code == 404
+
+
+# ---------------- Notifications (simulation mode) ----------------
+class TestNotifications:
+    """Backend should respond 200 for status change + submit-documents endpoints.
+       Email is in simulation mode (RESEND_API_KEY empty) — we don't assert email delivery."""
+
+    def test_status_change_triggers_notification(self, s):
+        # Create fresh order + attach a file + submit + writer update
+        r = s.post(f"{API}/orders", json={
+            "full_name": "Notif Test", "email": "notif@test.com", "phone": "+22500000001",
+            "document_type": "memoire", "subject": "Sujet de test pour notifications email en simulation",
+        })
+        assert r.status_code == 200
+        oid = r.json()["id"]
+        # Attach + submit
+        files = {"file": ("notif.txt", io.BytesIO(b"content"), "text/plain")}
+        fid = s.post(f"{API}/files/upload", files=files).json()["id"]
+        s.post(f"{API}/orders/attach-files", json={"order_id": oid, "file_ids": [fid]})
+        r = s.post(f"{API}/orders/submit-documents", json={"order_id": oid})
+        assert r.status_code == 200
+        assert s.get(f"{API}/orders/{oid}").json()["status"] == "documents_envoyes"
+
+        # Writer status update triggers notify_status_change
+        r = s.post(f"{API}/writer/update-status", json={
+            "key": WRITER_KEY, "order_id": oid, "status": "en_cours", "price_fcfa": 40000,
+        })
+        assert r.status_code == 200
+        assert s.get(f"{API}/orders/{oid}").json()["status"] == "en_cours"
+
+        # Another transition
+        r = s.post(f"{API}/writer/update-status", json={
+            "key": WRITER_KEY, "order_id": oid, "status": "livre",
+        })
+        assert r.status_code == 200
+        assert s.get(f"{API}/orders/{oid}").json()["status"] == "livre"
+
+
 # ---------------- AI streaming ----------------
 class TestAI:
     def test_ai_chat_stream(self, s, new_user):
