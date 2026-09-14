@@ -215,43 +215,16 @@ export default function OrderForm() {
       const folder = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
       for (const file of files) {
-        const safe = file.name.replace(/[^\w.\-]+/g, "_");
-        const path = `${folder}/${safe}`;
-        let uploaded = false;
-
-        // 1. Essai Firebase Storage avec timeout de 5 secondes
         try {
-          const res = await Promise.race([
-            uploadDocumentToFirebase(file),
-            new Promise<{ url: string; path: string }>((_, reject) =>
-              setTimeout(() => reject(new Error("Timeout Firebase Storage")), 5000)
-            ),
-          ]);
+          const res = await uploadDocumentToFirebase(file);
           if (res?.url) {
             paths.push(res.url);
-            uploaded = true;
+          } else {
+            const safe = file.name.replace(/[^\w.\-]+/g, "_");
+            paths.push(`local://${safe}`);
           }
-        } catch (fbErr) {
-          console.warn("[OrderForm] Firebase upload ignoré, repli Supabase/local:", fbErr);
-        }
-
-        // 2. Repli Supabase Storage
-        if (!uploaded) {
-          try {
-            const { error } = await supabase.storage
-              .from("order-uploads")
-              .upload(path, file, { upsert: false });
-            if (!error) {
-              paths.push(path);
-              uploaded = true;
-            }
-          } catch {
-            // fallback mode offline
-          }
-        }
-
-        // 3. Repli local PWA
-        if (!uploaded) {
+        } catch {
+          const safe = file.name.replace(/[^\w.\-]+/g, "_");
           paths.push(`local://${safe}`);
         }
       }

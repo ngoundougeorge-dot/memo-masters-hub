@@ -40,7 +40,25 @@ export interface FirebaseOrderData {
 }
 
 /**
- * Upload a document to Firebase Storage
+ * Convert file to base64 Data URL or Object URL as fallback
+ */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    if (file.size <= 2 * 1024 * 1024 && typeof FileReader !== "undefined") {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(URL.createObjectURL(file));
+      reader.readAsDataURL(file);
+    } else if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
+      resolve(URL.createObjectURL(file));
+    } else {
+      resolve(`local://${file.name}`);
+    }
+  });
+}
+
+/**
+ * Upload a document to Firebase Storage with instant local fallback
  */
 export async function uploadDocumentToFirebase(
   file: File,
@@ -48,15 +66,28 @@ export async function uploadDocumentToFirebase(
 ): Promise<{ url: string; path: string }> {
   const safeName = file.name.replace(/[^\w.\-]+/g, "_");
   const fullPath = `${folder}/${Date.now()}_${safeName}`;
-  const storageRef = ref(storage, fullPath);
 
-  const snapshot = await uploadBytes(storageRef, file);
-  const downloadUrl = await getDownloadURL(snapshot.ref);
+  try {
+    const storageRef = ref(storage, fullPath);
 
-  return {
-    url: downloadUrl,
-    path: fullPath,
-  };
+    const uploadPromise = uploadBytes(storageRef, file).then(async (snapshot) => {
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+      return { url: downloadUrl, path: fullPath };
+    });
+
+    const timeoutPromise = new Promise<{ url: string; path: string }>((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout Firebase Storage (2.5s)")), 2500)
+    );
+
+    return await Promise.race([uploadPromise, timeoutPromise]);
+  } catch (err) {
+    console.warn("[Firebase Storage] Bucket non accessible ou timeout, repli immédiat:", err);
+    const localUrl = await fileToDataUrl(file);
+    return {
+      url: localUrl,
+      path: fullPath,
+    };
+  }
 }
 
 /**

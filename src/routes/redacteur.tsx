@@ -780,7 +780,17 @@ function WriterDashboard() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => toast.info(`Consultation du fichier : ${filePath}`)}
+                            onClick={() => {
+                              if (filePath.startsWith("data:") || filePath.startsWith("http") || filePath.startsWith("blob:")) {
+                                const a = document.createElement("a");
+                                a.href = filePath;
+                                a.download = filePath.split("/").pop()?.replace(/^.*_/, "") || "document_etudiant.pdf";
+                                a.target = "_blank";
+                                a.click();
+                              } else {
+                                toast.info(`Fichier enregistré : ${filePath.split("/").pop()}`);
+                              }
+                            }}
                             className="h-7 text-xs gap-1 text-primary shrink-0"
                           >
                             <Download className="h-3 w-3" />

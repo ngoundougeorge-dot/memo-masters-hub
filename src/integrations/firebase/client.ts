@@ -25,6 +25,8 @@ export const app: FirebaseApp = !getApps().length
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
+storage.maxUploadRetryTime = 2000;
+storage.maxOperationRetryTime = 2000;
 
 // SSR-safe Analytics Initialization
 export let analytics: Analytics | null = null;
