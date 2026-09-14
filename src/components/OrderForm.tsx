@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadDocumentToFirebase, syncOrderToFirebase } from "@/integrations/firebase";
 import { submitOrder } from "@/lib/orders.functions";
 import { saveProjectData, getDefaultMilestones, getDefaultMessages, type ProjectDetails } from "@/lib/projectStore";
 
@@ -136,13 +137,36 @@ export default function OrderForm() {
       for (const file of files) {
         const safe = file.name.replace(/[^\w.\-]+/g, "_");
         const path = `${folder}/${safe}`;
+        let uploaded = false;
+
+        // 1. Essai Firebase Storage
         try {
-          const { error } = await supabase.storage
-            .from("order-uploads")
-            .upload(path, file, { upsert: false });
-          if (!error) paths.push(path);
-        } catch {
-          // fallback in offline mode
+          const res = await uploadDocumentToFirebase(file);
+          if (res?.url) {
+            paths.push(res.url);
+            uploaded = true;
+          }
+        } catch (fbErr) {
+          console.warn("[OrderForm] Firebase upload ignoré, repli Supabase/local:", fbErr);
+        }
+
+        // 2. Repli Supabase Storage
+        if (!uploaded) {
+          try {
+            const { error } = await supabase.storage
+              .from("order-uploads")
+              .upload(path, file, { upsert: false });
+            if (!error) {
+              paths.push(path);
+              uploaded = true;
+            }
+          } catch {
+            // fallback mode offline
+          }
+        }
+
+        // 3. Repli local PWA
+        if (!uploaded) {
           paths.push(`local://${safe}`);
         }
       }
@@ -214,6 +238,10 @@ export default function OrderForm() {
         messages: getDefaultMessages(orderId),
       };
       saveProjectData(newProject);
+      // Synchronisation temps réel avec Firebase Firestore
+      syncOrderToFirebase(newProject).catch((e) => {
+        console.warn("[OrderForm] Erreur sync Firebase:", e);
+      });
 
       // Save order id to client list
       try {

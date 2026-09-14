@@ -1,7 +1,8 @@
 /**
  * MemoMasters Hub — Store de Gestion de Projet, Jalons & Messagerie Interne
- * Supporte la synchronisation locale PWA et Supabase
+ * Supporte la synchronisation locale PWA, Supabase et Firebase Firestore
  */
+import { syncOrderToFirebase, updateFirebaseOrderStatus } from "@/integrations/firebase";
 
 export type Milestone = {
   id: string;
@@ -150,6 +151,11 @@ export function saveProjectData(project: ProjectDetails): void {
       localStorage.setItem(ALL_ORDERS_INDEX_KEY, JSON.stringify([project.orderId, ...list]));
     }
   } catch {}
+
+  // Synchronisation Firebase Firestore en tâche de fond
+  syncOrderToFirebase(project).catch((err) => {
+    console.warn("[projectStore] Synchronisation Firestore en arrière-plan:", err);
+  });
 }
 
 export function getAllProjects(): ProjectDetails[] {
@@ -197,6 +203,10 @@ export function setProjectPaymentConfirmed(orderId: string, confirmed: boolean):
   const proj = getProjectData(orderId);
   proj.paymentConfirmed = confirmed;
   saveProjectData(proj);
+  updateFirebaseOrderStatus(orderId, {
+    paymentConfirmed: confirmed,
+    status: confirmed ? "en_cours" : "projet_créé",
+  }).catch(() => {});
   return proj;
 }
 
@@ -210,6 +220,10 @@ export function setProjectCompleted(orderId: string, completed: boolean): Projec
     proj.milestones = proj.milestones.map((m) => ({ ...m, status: "valide" }));
   }
   saveProjectData(proj);
+  updateFirebaseOrderStatus(orderId, {
+    paymentConfirmed: true,
+    status: completed ? "terminé" : "en_cours",
+  }).catch(() => {});
   return proj;
 }
 

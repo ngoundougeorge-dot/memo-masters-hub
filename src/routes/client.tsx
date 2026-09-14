@@ -754,7 +754,7 @@ function ClientDashboard() {
             orderId={project?.orderId || activeOrderId}
             projectSubject={project?.subject || "Mémoire de Recherche"}
             academicLevel={project?.academicLevel || "Université Omar Bongo (UOB Libreville) — Master 2"}
-            studentName={remoteOrder?.full_name || "Grace Mba"}
+            studentName={project?.clientName || (remoteOrder as any)?.full_name || "Grace Mba"}
             completionDate="14 Septembre 2026"
             onClose={() => setShowCertificate(false)}
           />

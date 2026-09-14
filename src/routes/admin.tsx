@@ -158,7 +158,7 @@ function AdminDashboard() {
 
     try {
       // 1. Try atomic RPC function first
-      const { error: rpcError } = await supabase.rpc("set_user_role", {
+      const { error: rpcError } = await (supabase.rpc as any)("set_user_role", {
         target_user_id: user.id,
         new_role: targetRole,
       });
