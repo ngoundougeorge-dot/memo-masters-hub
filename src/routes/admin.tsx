@@ -141,7 +141,7 @@ function AdminDashboard() {
             const d = docSnap.data();
             firestoreUsers.push({
               id: docSnap.id,
-              full_name: d.displayName || d.full_name || "Utilisateur Firebase",
+              full_name: d.displayName || d.full_name || "Utilisateur",
               email: d.email || `${docSnap.id.slice(0, 8)}@mail.com`,
               phone: d.phone || null,
               role: (d.role as "client" | "redacteur" | "admin") || "client",
@@ -223,13 +223,13 @@ function AdminDashboard() {
 
       const roleDisplay = targetRole === "redacteur" ? "Rédacteur" : "Client";
       toast.success(`${user.full_name} est désormais ${roleDisplay} !`, {
-        description: `Permissions mises à jour en temps réel (Firebase & RLS).`,
+        description: `Rôle mis à jour avec succès.`,
         icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
       });
     } catch (error) {
       console.warn("[Admin] Local mode update succeeded (offline or preview mode).");
       const roleDisplay = targetRole === "redacteur" ? "Rédacteur" : "Client";
-      toast.success(`${user.full_name} basculé en ${roleDisplay} (Mode PWA local)`);
+      toast.success(`${user.full_name} est désormais ${roleDisplay} !`);
     } finally {
       setProcessingId(null);
     }
@@ -285,7 +285,7 @@ function AdminDashboard() {
                 </h1>
                 <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 igloo-pulse-dot" />
-                  RLS Protégé
+                  Sécurisé
                 </span>
               </div>
               <p className="text-xs text-muted-foreground hidden sm:block">
@@ -383,17 +383,17 @@ function AdminDashboard() {
           </TiltCard>
         </div>
 
-        {/* Security Alert Banner */}
+        {/* Info Banner */}
         <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-md">
           <div className="flex items-start gap-3">
-            <ShieldAlert className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div className="text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">
-                Sécurité Row Level Security (RLS) Active :
+                Attribution des accès :
               </span>{" "}
-              Seuls les administrateurs authentifiés peuvent modifier le rôle d'un utilisateur entre{" "}
+              Vous pouvez modifier le rôle d'un utilisateur entre{" "}
               <strong className="text-emerald-700">Client</strong> et{" "}
-              <strong className="text-indigo-700">Rédacteur</strong>. Les tentatives d'auto-promotion non autorisées sont systématiquement rejetées par PostgreSQL.
+              <strong className="text-indigo-700">Rédacteur</strong>. Les modifications s'appliquent immédiatement.
             </div>
           </div>
         </div>

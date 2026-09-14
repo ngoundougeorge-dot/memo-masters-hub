@@ -31,7 +31,7 @@ export const Route = createFileRoute("/auth")({
       { title: "Connexion Sécurisée — MémoirePro Gabon" },
       {
         name: "description",
-        content: "Connexion sécurisée sans mot de passe par lien magique Firebase pour suivre vos mémoires et rapports au Gabon.",
+        content: "Connexion sécurisée pour suivre vos mémoires et rapports au Gabon.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -67,7 +67,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [pwdLoading, setPwdLoading] = useState(false);
 
-  // 1. Détection automatique du retour par Lien Magique Firebase dans l'URL
+  // 1. Détection automatique du retour par Lien Magique dans l'URL
   useEffect(() => {
     async function handleIncomingLink() {
       if (checkIsSignInWithEmailLink()) {
@@ -76,14 +76,14 @@ function AuthPage() {
         try {
           const success = await completeMagicLinkSignIn();
           if (success) {
-            toast.success("Authentification par Lien Magique Firebase réussie !");
+            toast.success("Connexion réussie !");
             // Redirection immédiate selon le rôle
             redirectUserAccordingToRole(role);
           }
         } catch (err) {
-          console.error("[Auth] Erreur lors de la validation du lien e-mail:", err);
+          console.error("[Auth] Erreur validation lien:", err);
           setLinkError(err instanceof Error ? err.message : "Le lien de connexion est invalide ou a expiré.");
-          toast.error("Échec de connexion par lien magique");
+          toast.error("Échec de connexion par lien e-mail");
         } finally {
           setVerifyingMagicLink(false);
         }
@@ -174,7 +174,7 @@ function AuthPage() {
               Validation de votre lien...
             </h2>
             <p className="mt-3 text-sm text-muted-foreground">
-              Connexion sécurisée en cours avec Firebase Auth. Vous allez être redirigé vers votre espace.
+              Connexion en cours. Vous allez être redirigé vers votre espace.
             </p>
           </TiltCard>
         ) : user ? (
@@ -242,10 +242,10 @@ function AuthPage() {
                   <ShieldCheck className="h-6 w-6" />
                 </div>
                 <h1 className="font-serif text-2xl font-bold text-foreground">
-                  Portail d'Accès Sécurisé
+                  Connexion
                 </h1>
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  Authentification Firebase avec séparation stricte des rôles Client, Rédacteur et Administrateur.
+                  Accédez à votre espace pour suivre vos mémoires et commandes.
                 </p>
               </div>
 
@@ -322,13 +322,6 @@ function AuthPage() {
                           required
                           className="h-10 text-sm"
                         />
-                      </div>
-
-                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground leading-relaxed flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                        <span>
-                          <strong>Aucun mot de passe requis :</strong> Vous recevez un lien de connexion chiffré par e-mail. Votre rôle <strong>Client</strong> est assigné d'office à l'inscription.
-                        </span>
                       </div>
 
                       <Button
@@ -411,7 +404,7 @@ function AuthPage() {
                         ) : passwordMode === "login" ? (
                           "Se connecter"
                         ) : (
-                          "Créer mon compte Client"
+                          "Créer mon compte"
                         )}
                       </Button>
 
@@ -432,14 +425,6 @@ function AuthPage() {
                   </TabsContent>
                 </Tabs>
               )}
-
-              {/* Règle de sécurité affichée sous le formulaire */}
-              <div className="mt-6 border-t border-border/60 pt-4 text-center">
-                <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1.5">
-                  <Lock className="h-3 w-3 text-emerald-500" />
-                  Sécurité RLS & RBAC : Les comptes créés ne peuvent pas s'auto-attribuer le rôle admin.
-                </p>
-              </div>
             </TiltCard>
           </div>
         )}
