@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useServerFn } from "@tanstack/react-start";
@@ -19,6 +19,7 @@ import {
   ArrowRight,
   HelpCircle,
   UserCheck,
+  AlertCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { uploadDocumentToFirebase, syncOrderToFirebase, useAuth } from "@/integrations/firebase";
 import { submitOrder } from "@/lib/orders.functions";
 import { saveProjectData, getDefaultMilestones, getDefaultMessages, type ProjectDetails } from "@/lib/projectStore";
+
+function getDefaultDeadline(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return d.toISOString().split("T")[0];
+}
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Nom trop court"),
@@ -87,11 +94,20 @@ export default function OrderForm() {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
+      full_name: "",
+      email: "",
+      phone: "",
+      academic_level: "Université Omar Bongo (UOB Libreville)",
+      subject: "",
       document_type: "memoire_master",
       pages: 60,
+      deadline: getDefaultDeadline(),
       has_guidelines: "oui",
+      guidelines_text: "",
       has_plan: "non",
+      plan_text: "",
       has_cover_page: "oui",
+      cover_page_text: "",
       payment_method: "airtel_money",
     },
   });
@@ -154,6 +170,44 @@ export default function OrderForm() {
     setFiles(files.filter((_, i) => i !== index));
   };
 
+  // Gestion des erreurs de validation avec notification sonner et défilement immédiat
+  const onInvalid = (errors: FieldErrors<FormValues>) => {
+    console.warn("[OrderForm] Erreurs de validation du formulaire:", errors);
+    const errorKeys = Object.keys(errors) as (keyof FormValues)[];
+
+    const FIELD_LABELS: Record<string, string> = {
+      full_name: "Nom complet",
+      email: "Adresse email",
+      phone: "Numéro de téléphone / WhatsApp Gabon",
+      academic_level: "Établissement ou niveau d'études",
+      subject: "Sujet de rédaction",
+      pages: "Nombre de pages",
+      deadline: "Date d'échéance",
+      document_type: "Type de document",
+      payment_method: "Mode de paiement",
+    };
+
+    const missingNames = errorKeys.map((k) => FIELD_LABELS[k] || k);
+    const firstError = errorKeys.length > 0 ? errors[errorKeys[0]] : null;
+    const firstMsg = firstError?.message || "Veuillez compléter les informations demandées.";
+
+    toast.error(`Formulaire incomplet : ${firstMsg}`, {
+      description: `Champs requis : ${missingNames.join(", ")}`,
+      duration: 6000,
+    });
+
+    if (errorKeys.length > 0) {
+      const firstKey = errorKeys[0];
+      const element =
+        document.getElementById(firstKey) ||
+        document.querySelector(`[name="${firstKey}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        (element as HTMLElement).focus?.();
+      }
+    }
+  };
+
   const onSubmit = async (values: FormValues) => {
     setUploading(true);
     try {
@@ -165,9 +219,14 @@ export default function OrderForm() {
         const path = `${folder}/${safe}`;
         let uploaded = false;
 
-        // 1. Essai Firebase Storage
+        // 1. Essai Firebase Storage avec timeout de 5 secondes
         try {
-          const res = await uploadDocumentToFirebase(file);
+          const res = await Promise.race([
+            uploadDocumentToFirebase(file),
+            new Promise<{ url: string; path: string }>((_, reject) =>
+              setTimeout(() => reject(new Error("Timeout Firebase Storage")), 5000)
+            ),
+          ]);
           if (res?.url) {
             paths.push(res.url);
             uploaded = true;
@@ -212,22 +271,27 @@ export default function OrderForm() {
 
       let orderId = `ord-${Date.now().toString(36)}`;
       try {
-        const res = await submit({
-          data: {
-            full_name: values.full_name,
-            email: values.email,
-            phone: values.phone,
-            document_type: mappedDocType as "memoire_licence" | "memoire_master" | "rapport_stage" | "correction" | "autre",
-            academic_level: values.academic_level,
-            subject: values.subject,
-            instructions: fullInstructions,
-            deadline: values.deadline,
-            pages: Number(values.pages),
-            price_fcfa: estimatedPrice,
-            payment_method: values.payment_method,
-            file_paths: paths,
-          },
-        });
+        const res = await Promise.race([
+          submit({
+            data: {
+              full_name: values.full_name,
+              email: values.email,
+              phone: values.phone,
+              document_type: mappedDocType as "memoire_licence" | "memoire_master" | "rapport_stage" | "correction" | "autre",
+              academic_level: values.academic_level,
+              subject: values.subject,
+              instructions: fullInstructions,
+              deadline: values.deadline,
+              pages: Number(values.pages),
+              price_fcfa: estimatedPrice,
+              payment_method: values.payment_method,
+              file_paths: paths,
+            },
+          }),
+          new Promise<{ id: string }>((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout Submit")), 4000)
+          ),
+        ]);
         if (res?.id) orderId = res.id;
       } catch (err) {
         console.warn("[OrderForm] Remote submit error, storing locally in PWA mode:", err);
@@ -348,7 +412,8 @@ export default function OrderForm() {
 
   return (
     <form
-      onSubmit={form.handleSubmit(onSubmit)}
+      onSubmit={form.handleSubmit(onSubmit, onInvalid)}
+      noValidate
       className="space-y-6 rounded-2xl border border-border/80 bg-card p-6 shadow-md sm:p-8"
     >
       <div className="flex items-center justify-between border-b border-border/60 pb-4">
@@ -383,12 +448,17 @@ export default function OrderForm() {
                 </span>
               </p>
               <p className="text-[11px] text-muted-foreground">
-                Vos informations personnelles (nom, email, téléphone) sont pré-remplies automatiquement depuis votre compte.
+                Vos nom et adresse email ont été importés automatiquement.{" "}
+                {!form.watch("phone") && (
+                  <strong className="text-amber-600 dark:text-amber-400">
+                    Indiquez ci-dessous votre numéro WhatsApp Gabon pour le suivi de votre mémoire.
+                  </strong>
+                )}
               </p>
             </div>
           </div>
           <span className="self-start sm:self-center text-[11px] font-medium bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-500/30 shrink-0">
-            Coordonnées pré-remplies
+            Coordonnées synchronisées
           </span>
         </div>
       ) : (
@@ -406,23 +476,39 @@ export default function OrderForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="full_name">Nom complet *</Label>
-          <Input id="full_name" {...form.register("full_name")} placeholder="Jean-Pierre Nguema" />
+          <Input
+            id="full_name"
+            {...form.register("full_name")}
+            placeholder="Jean-Pierre Nguema"
+            className={form.formState.errors.full_name ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
           {form.formState.errors.full_name && (
-            <p className="text-xs text-destructive">{form.formState.errors.full_name.message}</p>
+            <p className="text-xs text-destructive font-medium">{form.formState.errors.full_name.message}</p>
           )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">Email *</Label>
-          <Input id="email" type="email" {...form.register("email")} placeholder="etudiant@uob.ga" />
+          <Input
+            id="email"
+            type="email"
+            {...form.register("email")}
+            placeholder="etudiant@uob.ga"
+            className={form.formState.errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
           {form.formState.errors.email && (
-            <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
+            <p className="text-xs text-destructive font-medium">{form.formState.errors.email.message}</p>
           )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="phone">Téléphone / WhatsApp Gabon *</Label>
-          <Input id="phone" {...form.register("phone")} placeholder="+241 74 00 00 00" />
+          <Input
+            id="phone"
+            {...form.register("phone")}
+            placeholder="+241 74 00 00 00"
+            className={form.formState.errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
           {form.formState.errors.phone && (
-            <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>
+            <p className="text-xs text-destructive font-medium">{form.formState.errors.phone.message}</p>
           )}
         </div>
         <div className="space-y-1.5">
@@ -431,9 +517,10 @@ export default function OrderForm() {
             id="academic_level"
             {...form.register("academic_level")}
             placeholder="Université Omar Bongo (UOB Libreville) — Master 2"
+            className={form.formState.errors.academic_level ? "border-destructive focus-visible:ring-destructive" : ""}
           />
           {form.formState.errors.academic_level && (
-            <p className="text-xs text-destructive">{form.formState.errors.academic_level.message}</p>
+            <p className="text-xs text-destructive font-medium">{form.formState.errors.academic_level.message}</p>
           )}
         </div>
       </div>
@@ -444,7 +531,8 @@ export default function OrderForm() {
           <Label>Type de document *</Label>
           <Select
             defaultValue="memoire_master"
-            onValueChange={(v) => form.setValue("document_type", v as FormValues["document_type"])}
+            value={selectedDocType}
+            onValueChange={(v) => form.setValue("document_type", v as FormValues["document_type"], { shouldValidate: true })}
           >
             <SelectTrigger>
               <SelectValue />
@@ -462,17 +550,29 @@ export default function OrderForm() {
 
         <div className="space-y-1.5">
           <Label htmlFor="pages">Nombre de pages estimées *</Label>
-          <Input id="pages" type="number" min={5} max={1000} {...form.register("pages")} />
+          <Input
+            id="pages"
+            type="number"
+            min={5}
+            max={1000}
+            {...form.register("pages")}
+            className={form.formState.errors.pages ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
           {form.formState.errors.pages && (
-            <p className="text-xs text-destructive">{form.formState.errors.pages.message}</p>
+            <p className="text-xs text-destructive font-medium">{form.formState.errors.pages.message}</p>
           )}
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="deadline">Échéance (Date limite) *</Label>
-          <Input id="deadline" type="date" {...form.register("deadline")} />
+          <Input
+            id="deadline"
+            type="date"
+            {...form.register("deadline")}
+            className={form.formState.errors.deadline ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
           {form.formState.errors.deadline && (
-            <p className="text-xs text-destructive">{form.formState.errors.deadline.message}</p>
+            <p className="text-xs text-destructive font-medium">{form.formState.errors.deadline.message}</p>
           )}
         </div>
       </div>
@@ -485,9 +585,10 @@ export default function OrderForm() {
           rows={2}
           {...form.register("subject")}
           placeholder="Ex: Stratégies de valorisation de la filière bois et transition écologique au Gabon : Étude de cas sectorielle."
+          className={form.formState.errors.subject ? "border-destructive focus-visible:ring-destructive" : ""}
         />
         {form.formState.errors.subject && (
-          <p className="text-xs text-destructive">{form.formState.errors.subject.message}</p>
+          <p className="text-xs text-destructive font-medium">{form.formState.errors.subject.message}</p>
         )}
       </div>
 
@@ -517,7 +618,7 @@ export default function OrderForm() {
             <RadioGroup
               defaultValue="oui"
               value={hasGuidelines}
-              onValueChange={(val) => form.setValue("has_guidelines", val as "oui" | "non")}
+              onValueChange={(val) => form.setValue("has_guidelines", val as "oui" | "non", { shouldValidate: true })}
               className="flex gap-4 text-xs shrink-0"
             >
               <div className="flex items-center space-x-1.5">
@@ -557,7 +658,7 @@ export default function OrderForm() {
             <RadioGroup
               defaultValue="non"
               value={hasPlan}
-              onValueChange={(val) => form.setValue("has_plan", val as "oui" | "non")}
+              onValueChange={(val) => form.setValue("has_plan", val as "oui" | "non", { shouldValidate: true })}
               className="flex gap-4 text-xs shrink-0"
             >
               <div className="flex items-center space-x-1.5">
@@ -603,7 +704,7 @@ export default function OrderForm() {
             <RadioGroup
               defaultValue="oui"
               value={hasCoverPage}
-              onValueChange={(val) => form.setValue("has_cover_page", val as "oui" | "non")}
+              onValueChange={(val) => form.setValue("has_cover_page", val as "oui" | "non", { shouldValidate: true })}
               className="flex gap-4 text-xs shrink-0"
             >
               <div className="flex items-center space-x-1.5">
@@ -690,7 +791,8 @@ export default function OrderForm() {
         <Label>Mode de paiement préféré (Gabon) *</Label>
         <Select
           defaultValue="airtel_money"
-          onValueChange={(v) => form.setValue("payment_method", v)}
+          value={form.watch("payment_method")}
+          onValueChange={(v) => form.setValue("payment_method", v, { shouldValidate: true })}
         >
           <SelectTrigger>
             <SelectValue />
@@ -704,12 +806,22 @@ export default function OrderForm() {
         </Select>
       </div>
 
+      {/* Alerte visuelle en bas si des champs obligatoires sont incomplets */}
+      {Object.keys(form.formState.errors).length > 0 && (
+        <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3.5 text-xs text-destructive flex items-center gap-2.5 animate-in fade-in duration-200">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="font-medium">
+            Attention : {Object.keys(form.formState.errors).length} champ(s) obligatoire(s) restant(s) à renseigner ci-dessus avant de pouvoir envoyer.
+          </span>
+        </div>
+      )}
+
       {/* Bouton de soumission */}
       <Button
         type="submit"
         size="lg"
         disabled={uploading}
-        className="w-full gap-2 rounded-xl text-sm font-semibold shadow-md"
+        className="w-full gap-2 rounded-xl text-sm font-semibold shadow-md transition-all active:scale-[0.99]"
       >
         {uploading ? (
           <>
