@@ -50,6 +50,8 @@ import {
 } from "@/lib/projectStore";
 import { TiltCard } from "@/components/TiltCard";
 import { AcademicCertificate } from "@/components/AcademicCertificate";
+import { RoleGuard } from "@/components/RoleGuard";
+import { useAuth } from "@/integrations/firebase";
 
 type ClientSearch = {
   order_id?: string;
@@ -76,6 +78,7 @@ const TIMELINE = [
 ] as const;
 
 function ClientDashboard() {
+  const { user, role, logout } = useAuth();
   const search = Route.useSearch();
   const [activeOrderId, setActiveOrderId] = useState<string>(search.order_id || "");
   const [project, setProject] = useState<ProjectDetails | null>(null);
@@ -184,30 +187,49 @@ function ClientDashboard() {
   };
 
   return (
-    <main className="min-h-screen bg-background pb-16">
-      {/* Header */}
-      <header className="border-b border-border/70 bg-card/80 backdrop-blur-md igloo-glass sticky top-0 z-40">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="font-serif text-xl font-bold text-primary">MémoirePro</span>
-            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-              Espace Client
-            </span>
-          </Link>
+    <RoleGuard
+      allowedRoles={["client", "redacteur", "admin"]}
+      fallbackTitle="Espace Client Sécurisé"
+      customMessage="Veuillez vous connecter avec votre compte pour accéder au suivi de votre mémoire et à vos documents."
+    >
+      <main className="min-h-screen bg-background pb-16">
+        {/* Header */}
+        <header className="border-b border-border/70 bg-card/80 backdrop-blur-md igloo-glass sticky top-0 z-40">
+          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
+            <Link to="/" className="flex items-center gap-2">
+              <span className="font-serif text-xl font-bold text-primary">MémoirePro</span>
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                Espace Client
+              </span>
+            </Link>
 
-          <div className="flex items-center gap-3">
-            <Button asChild variant="ghost" size="sm" className="text-xs">
-              <Link to="/redacteur">Espace Rédacteur</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm" className="text-xs">
-              <Link to="/admin">Administration</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="text-xs">
-              <Link to="/">Accueil</Link>
-            </Button>
+            <div className="flex items-center gap-2.5">
+              <Button asChild variant="ghost" size="sm" className="text-xs">
+                <Link to="/">Accueil</Link>
+              </Button>
+              {(role === "redacteur" || role === "admin") && (
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                  <Link to="/redacteur">Espace Rédacteur</Link>
+                </Button>
+              )}
+              {role === "admin" && (
+                <Button asChild variant="outline" size="sm" className="text-xs bg-amber-500/10 text-amber-600 border-amber-300">
+                  <Link to="/admin">Administration</Link>
+                </Button>
+              )}
+              {user && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => logout()}
+                  className="text-xs text-destructive hover:bg-destructive/10"
+                >
+                  Déconnexion
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       <div className="mx-auto max-w-5xl px-4 pt-8 sm:px-6">
         {/* Title & Navigation */}
@@ -761,6 +783,7 @@ function ClientDashboard() {
         </DialogContent>
       </Dialog>
     </main>
+    </RoleGuard>
   );
 }
 

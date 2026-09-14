@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "sonner";
+import { AuthProvider } from "@/integrations/firebase";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -154,10 +155,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuroraBackground />
-      <Outlet />
-      <PwaInstallPrompt />
-      <Toaster position="top-center" richColors />
+      <AuthProvider>
+        <AuroraBackground />
+        <Outlet />
+        <PwaInstallPrompt />
+        <Toaster position="top-center" richColors />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

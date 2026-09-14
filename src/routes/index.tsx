@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { TiltCard } from "@/components/TiltCard";
 import AuthButton from "@/components/AuthButton";
 import OrderForm from "@/components/OrderForm";
+import { useAuth } from "@/integrations/firebase";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -53,6 +54,8 @@ const pricing = [
 ];
 
 function Home() {
+  const { role } = useAuth();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
@@ -62,15 +65,21 @@ function Home() {
             <BookOpen className="h-6 w-6 text-primary" strokeWidth={1.5} />
             <span className="font-serif text-xl font-bold text-primary">MémoirePro Gabon</span>
           </a>
-          <nav className="hidden gap-6 text-sm text-muted-foreground md:flex">
+          <nav className="hidden gap-6 text-sm text-muted-foreground md:flex items-center">
             <a href="#tarifs" className="hover:text-foreground transition-colors">Tarifs</a>
             <a href="#garanties" className="hover:text-foreground transition-colors">Garanties</a>
             <Link to="/client" className="hover:text-foreground transition-colors">Espace Client</Link>
-            <Link to="/redacteur" className="hover:text-foreground transition-colors">Espace Rédacteur</Link>
-            <Link to="/admin" className="inline-flex items-center gap-1 text-primary font-medium hover:underline">
-              <ShieldAlert className="h-3.5 w-3.5" />
-              Admin
-            </Link>
+            {(role === "redacteur" || role === "admin") && (
+              <Link to="/redacteur" className="hover:text-foreground transition-colors font-medium text-indigo-500">
+                Espace Rédacteur
+              </Link>
+            )}
+            {role === "admin" && (
+              <Link to="/admin" className="inline-flex items-center gap-1 text-amber-500 font-medium hover:underline">
+                <ShieldAlert className="h-3.5 w-3.5" />
+                Admin
+              </Link>
+            )}
           </nav>
           <div className="flex items-center gap-2">
             <AuthButton />

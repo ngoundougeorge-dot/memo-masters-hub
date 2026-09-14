@@ -22,6 +22,9 @@ import {
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase";
+import { collection, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { RoleGuard } from "@/components/RoleGuard";
 import { TiltCard } from "@/components/TiltCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,7 +101,7 @@ function AdminDashboard() {
   const [roleFilter, setRoleFilter] = useState<"all" | "client" | "redacteur" | "admin">("all");
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // Load live profiles and user_roles from Supabase
+  // Load live profiles and user_roles from Supabase and Firebase Firestore
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -112,13 +115,14 @@ function AdminDashboard() {
         console.warn("[Admin] Supabase profiles fetch error (using fallback):", profilesError.message);
       }
 
+      let merged: AdminUser[] = [];
       if (profilesData && profilesData.length > 0) {
         const rolesMap = new Map<string, "client" | "redacteur" | "admin">();
         (rolesData ?? []).forEach((r) => {
           rolesMap.set(r.user_id, r.role as "client" | "redacteur" | "admin");
         });
 
-        const merged: AdminUser[] = profilesData.map((p) => ({
+        merged = profilesData.map((p) => ({
           id: p.id,
           full_name: p.full_name || "Étudiant sans nom",
           email: `${p.id.slice(0, 8)}@user.memoirepro.com`,
@@ -126,7 +130,34 @@ function AdminDashboard() {
           role: rolesMap.get(p.id) || "client",
           created_at: p.created_at,
         }));
+      }
 
+      // Synchronisation avec les utilisateurs Firestore
+      try {
+        const snap = await getDocs(collection(db, "users"));
+        if (!snap.empty) {
+          const firestoreUsers: AdminUser[] = [];
+          snap.forEach((docSnap) => {
+            const d = docSnap.data();
+            firestoreUsers.push({
+              id: docSnap.id,
+              full_name: d.displayName || d.full_name || "Utilisateur Firebase",
+              email: d.email || `${docSnap.id.slice(0, 8)}@mail.com`,
+              phone: d.phone || null,
+              role: (d.role as "client" | "redacteur" | "admin") || "client",
+              created_at: d.createdAt?.toDate ? d.createdAt.toDate().toISOString() : (d.createdAt || new Date().toISOString()),
+            });
+          });
+
+          const fsIds = new Set(firestoreUsers.map((u) => u.id));
+          const nonDuplicatedMerged = merged.filter((m) => !fsIds.has(m.id));
+          merged = [...firestoreUsers, ...nonDuplicatedMerged];
+        }
+      } catch (fbErr) {
+        console.warn("[Admin] Firestore users fetch skipped:", fbErr);
+      }
+
+      if (merged.length > 0) {
         setUsers(merged);
       }
     } catch (err) {
@@ -157,14 +188,26 @@ function AdminDashboard() {
     );
 
     try {
-      // 1. Try atomic RPC function first
+      // 1. Mise à jour dans Cloud Firestore
+      try {
+        const userDocRef = doc(db, "users", user.id);
+        await updateDoc(userDocRef, {
+          role: targetRole,
+          updatedAt: serverTimestamp(),
+        });
+        console.log(`[Admin] Rôle Firestore synchronisé pour ${user.id}: ${targetRole}`);
+      } catch (fbErr) {
+        console.warn("[Admin] Firestore update fallback:", fbErr);
+      }
+
+      // 2. Mise à jour Supabase RPC
       const { error: rpcError } = await (supabase.rpc as any)("set_user_role", {
         target_user_id: user.id,
         new_role: targetRole,
       });
 
       if (rpcError) {
-        // 2. Direct fallback on user_roles table
+        // Direct fallback on user_roles table
         const { error: deleteError } = await supabase
           .from("user_roles")
           .delete()
@@ -180,7 +223,7 @@ function AdminDashboard() {
 
       const roleDisplay = targetRole === "redacteur" ? "Rédacteur" : "Client";
       toast.success(`${user.full_name} est désormais ${roleDisplay} !`, {
-        description: `Permissions mises à jour en temps réel via Supabase RLS.`,
+        description: `Permissions mises à jour en temps réel (Firebase & RLS).`,
         icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
       });
     } catch (error) {
@@ -218,7 +261,12 @@ function AdminDashboard() {
   }, [users]);
 
   return (
-    <div className="min-h-screen bg-background pb-16 text-foreground">
+    <RoleGuard
+      allowedRoles={["admin"]}
+      fallbackTitle="Panneau d'Administration"
+      customMessage="L'accès à la gestion des rôles et des autorisations d'écriture est strictement réservé aux Administrateurs."
+    >
+      <div className="min-h-screen bg-background pb-16 text-foreground">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
@@ -506,6 +554,7 @@ function AdminDashboard() {
         </div>
       </main>
     </div>
+    </RoleGuard>
   );
 }
 

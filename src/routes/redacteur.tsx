@@ -44,6 +44,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { TiltCard } from "@/components/TiltCard";
+import { RoleGuard } from "@/components/RoleGuard";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getProjectData,
@@ -419,7 +420,12 @@ function WriterDashboard() {
   };
 
   return (
-    <main className="min-h-screen bg-background pb-16">
+    <RoleGuard
+      allowedRoles={["redacteur", "admin"]}
+      fallbackTitle="Console de Rédaction Académique"
+      customMessage="L'accès à l'espace de rédaction et de suivi des manuscrits est strictement réservé aux Rédacteurs et aux Administrateurs."
+    >
+      <main className="min-h-screen bg-background pb-16">
       {/* Header Unifié Administration & Rédaction */}
       <header className="border-b border-border/70 bg-card/80 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
@@ -1060,6 +1066,7 @@ function WriterDashboard() {
         </DialogContent>
       </Dialog>
     </main>
+    </RoleGuard>
   );
 }
 export default WriterDashboard;
