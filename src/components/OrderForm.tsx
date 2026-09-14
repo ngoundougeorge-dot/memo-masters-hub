@@ -386,83 +386,141 @@ export default function OrderForm() {
         )}
       </div>
 
-      {/* 4. Critères spécifiques (Page 2 du PDF) */}
-      <div className="grid gap-4 rounded-xl border border-border/70 bg-muted/20 p-4 sm:grid-cols-3">
-        {/* Démarche / Consignes */}
-        <div className="space-y-2">
-          <Label className="text-xs font-semibold">Y a-t-il une consigne à respecter ?</Label>
-          <RadioGroup
-            defaultValue="oui"
-            onValueChange={(val) => form.setValue("has_guidelines", val as "oui" | "non")}
-            className="flex gap-4 text-xs"
-          >
-            <div className="flex items-center space-x-1.5">
-              <RadioGroupItem value="oui" id="g-oui" />
-              <Label htmlFor="g-oui" className="font-normal text-xs">Oui</Label>
+      {/* 4. Critères Spécifiques : Consignes, Plan de Rédaction & Page de Garde */}
+      <div className="space-y-4 rounded-xl border border-border/80 bg-muted/20 p-4 sm:p-5">
+        <div className="border-b border-border/60 pb-2.5">
+          <h4 className="font-serif text-sm font-bold text-foreground flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            Consignes Pédagogiques, Plan de Rédaction & Page de Garde
+          </h4>
+          <p className="text-[11px] text-muted-foreground">
+            Détaillez vos consignes académiques ou collez la structure de votre plan ci-dessous en toute liberté.
+          </p>
+        </div>
+
+        {/* A. Démarche & Consignes à respecter */}
+        <div className="rounded-lg border border-border/60 bg-background/70 p-4 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <Label className="text-xs font-semibold text-foreground">
+                Y a-t-il une consigne ou démarche particulière à respecter ?
+              </Label>
+              <p className="text-[11px] text-muted-foreground">
+                Normes typographiques, nombre de chapitres, exigences méthodologiques de votre université.
+              </p>
             </div>
-            <div className="flex items-center space-x-1.5">
-              <RadioGroupItem value="non" id="g-non" />
-              <Label htmlFor="g-non" className="font-normal text-xs">Non</Label>
-            </div>
-          </RadioGroup>
+            <RadioGroup
+              defaultValue="oui"
+              value={hasGuidelines}
+              onValueChange={(val) => form.setValue("has_guidelines", val as "oui" | "non")}
+              className="flex gap-4 text-xs shrink-0"
+            >
+              <div className="flex items-center space-x-1.5">
+                <RadioGroupItem value="oui" id="g-oui" />
+                <Label htmlFor="g-oui" className="font-medium text-xs cursor-pointer">Oui</Label>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <RadioGroupItem value="non" id="g-non" />
+                <Label htmlFor="g-non" className="font-medium text-xs cursor-pointer">Non</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
           {hasGuidelines === "oui" && (
-            <Input
-              placeholder="Normes APA, police 12..."
-              className="text-xs h-8"
-              {...form.register("guidelines_text")}
-            />
+            <div className="space-y-1 pt-1">
+              <Textarea
+                rows={3}
+                placeholder="Détaillez ici toutes vos consignes : normes APA 7e édition / CAMES, police Times New Roman 12, interligne 1.5, marges 2.5 cm, nombre d'entretiens ou d'échantillons attendus, directives spécifiques de votre directeur de recherche..."
+                className="text-xs min-h-[85px] resize-y rounded-lg leading-relaxed bg-background"
+                {...form.register("guidelines_text")}
+              />
+            </div>
           )}
         </div>
 
-        {/* Avez-vous un plan ? */}
-        <div className="space-y-2">
-          <Label className="text-xs font-semibold">Avez-vous un plan ?</Label>
-          <RadioGroup
-            defaultValue="non"
-            onValueChange={(val) => form.setValue("has_plan", val as "oui" | "non")}
-            className="flex gap-4 text-xs"
-          >
-            <div className="flex items-center space-x-1.5">
-              <RadioGroupItem value="oui" id="p-oui" />
-              <Label htmlFor="p-oui" className="font-normal text-xs">Oui</Label>
+        {/* B. Plan de Rédaction (Généreux Textarea multi-lignes) */}
+        <div className="rounded-lg border border-border/60 bg-background/70 p-4 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <Label className="text-xs font-semibold text-foreground">
+                Avez-vous déjà un plan de travail ou une ébauche de sommaire ?
+              </Label>
+              <p className="text-[11px] text-muted-foreground">
+                Si non, notre rédacteur senior élaborera un plan détaillé en 2 parties conforme CAMES au Jalon 1.
+              </p>
             </div>
-            <div className="flex items-center space-x-1.5">
-              <RadioGroupItem value="non" id="p-non" />
-              <Label htmlFor="p-non" className="font-normal text-xs">Non</Label>
-            </div>
-          </RadioGroup>
+            <RadioGroup
+              defaultValue="non"
+              value={hasPlan}
+              onValueChange={(val) => form.setValue("has_plan", val as "oui" | "non")}
+              className="flex gap-4 text-xs shrink-0"
+            >
+              <div className="flex items-center space-x-1.5">
+                <RadioGroupItem value="oui" id="p-oui" />
+                <Label htmlFor="p-oui" className="font-medium text-xs cursor-pointer">Oui</Label>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <RadioGroupItem value="non" id="p-non" />
+                <Label htmlFor="p-non" className="font-medium text-xs cursor-pointer">Non</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
           {hasPlan === "oui" && (
-            <Input
-              placeholder="Plan en 2 parties, sommaire..."
-              className="text-xs h-8"
-              {...form.register("plan_text")}
-            />
+            <div className="space-y-2 pt-1">
+              <Textarea
+                rows={6}
+                placeholder="Collez ou rédigez ici votre plan détaillé avec vos parties, chapitres et sous-parties :&#10;&#10;Exemple :&#10;Introduction Générale & Problématique&#10;Partie 1 : Cadre théorique et revue documentaire&#10;  Chapitre 1 : Revue critique de la littérature et cadre conceptuel...&#10;  Chapitre 2 : Analyse du contexte socio-économique au Gabon...&#10;Partie 2 : Démarche empirique et analyse des résultats&#10;  Chapitre 3 : Protocole d'enquête, échantillonnage et collecte de données...&#10;  Chapitre 4 : Discussion des résultats et recommandations managériales...&#10;Conclusion Générale & Bibliographie CAMES"
+                className="font-mono text-xs min-h-[140px] resize-y rounded-lg leading-relaxed bg-background"
+                {...form.register("plan_text")}
+              />
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                <span>💡</span>
+                <span>
+                  <strong>Astuce :</strong> Si votre plan est déjà sous format Word (.docx) ou PDF, vous pouvez également le glisser dans la zone de fichiers ci-dessous.
+                </span>
+              </p>
+            </div>
           )}
         </div>
 
-        {/* Page de garde */}
-        <div className="space-y-2">
-          <Label className="text-xs font-semibold">Page de garde à fournir ?</Label>
-          <RadioGroup
-            defaultValue="oui"
-            onValueChange={(val) => form.setValue("has_cover_page", val as "oui" | "non")}
-            className="flex gap-4 text-xs"
-          >
-            <div className="flex items-center space-x-1.5">
-              <RadioGroupItem value="oui" id="cg-oui" />
-              <Label htmlFor="cg-oui" className="font-normal text-xs">Oui</Label>
+        {/* C. Page de garde */}
+        <div className="rounded-lg border border-border/60 bg-background/70 p-4 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <Label className="text-xs font-semibold text-foreground">
+                Souhaitez-vous une page de garde personnalisée ?
+              </Label>
+              <p className="text-[11px] text-muted-foreground">
+                Mise en page officielle avec logos universitaires (UOB, USTM, INSG, USS, etc.).
+              </p>
             </div>
-            <div className="flex items-center space-x-1.5">
-              <RadioGroupItem value="non" id="cg-non" />
-              <Label htmlFor="cg-non" className="font-normal text-xs">Non</Label>
-            </div>
-          </RadioGroup>
+            <RadioGroup
+              defaultValue="oui"
+              value={hasCoverPage}
+              onValueChange={(val) => form.setValue("has_cover_page", val as "oui" | "non")}
+              className="flex gap-4 text-xs shrink-0"
+            >
+              <div className="flex items-center space-x-1.5">
+                <RadioGroupItem value="oui" id="cg-oui" />
+                <Label htmlFor="cg-oui" className="font-medium text-xs cursor-pointer">Oui</Label>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <RadioGroupItem value="non" id="cg-non" />
+                <Label htmlFor="cg-non" className="font-medium text-xs cursor-pointer">Non</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
           {hasCoverPage === "oui" && (
-            <Input
-              placeholder="Directeur, logo université..."
-              className="text-xs h-8"
-              {...form.register("cover_page_text")}
-            />
+            <div className="space-y-1 pt-1">
+              <Textarea
+                rows={2}
+                placeholder="Précisez les mentions à inclure : Nom de l'Université & Faculté (ex: UOB / FDSE), Titre exact du mémoire, Nom de votre encadreur/directeur de thèse, Année académique (ex: 2025-2026), Spécialité / Filière..."
+                className="text-xs min-h-[75px] resize-y rounded-lg leading-relaxed bg-background"
+                {...form.register("cover_page_text")}
+              />
+            </div>
           )}
         </div>
       </div>
