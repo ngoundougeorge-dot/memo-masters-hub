@@ -1,2 +1,17 @@
+# Robots.txt — MémoirePro Gabon (Production)
 User-agent: *
 Allow: /
+Allow: /cgv
+Allow: /confidentialite
+Allow: /charte-ethique
+Allow: /mentions-legales
+Allow: /certificat
+
+# Protection des espaces privés & d'administration
+Disallow: /admin
+Disallow: /redacteur
+Disallow: /_authenticated
+Disallow: /profil
+
+# Sitemap officiel
+Sitemap: https://memoirepro.ga/sitemap.xml

@@ -49,6 +49,7 @@ import {
   type Milestone,
 } from "@/lib/projectStore";
 import { TiltCard } from "@/components/TiltCard";
+import { AcademicCertificate } from "@/components/AcademicCertificate";
 
 type ClientSearch = {
   order_id?: string;
@@ -83,6 +84,7 @@ function ClientDashboard() {
   const [messageInput, setMessageInput] = useState<string>("");
   const [complementaryFiles, setComplementaryFiles] = useState<string[]>([]);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [showCertificate, setShowCertificate] = useState<boolean>(false);
 
   // Fallback to local order ID if not provided in search params
   useEffect(() => {
@@ -426,11 +428,11 @@ function ClientDashboard() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => toast.info("Rapport anti-plagiat Turnitin : Similarité 0.8% (Certifié).")}
-                        className="gap-1.5 border-emerald-400/50 text-xs"
+                        onClick={() => setShowCertificate(true)}
+                        className="gap-1.5 border-emerald-400/50 text-xs text-emerald-700 dark:text-emerald-300 font-semibold igloo-spring-btn"
                       >
                         <FileCheck2 className="h-4 w-4 text-emerald-600" />
-                        <span>Rapport Anti-Plagiat</span>
+                        <span>Certificat Anti-Plagiat</span>
                       </Button>
                     </div>
                   ) : (
@@ -742,6 +744,20 @@ function ClientDashboard() {
               Fermer la consultation
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Certificat Officiel d'Authenticité & Anti-Plagiat */}
+      <Dialog open={showCertificate} onOpenChange={setShowCertificate}>
+        <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto p-4 sm:p-6">
+          <AcademicCertificate
+            orderId={project?.orderId || activeOrderId}
+            projectSubject={project?.subject || "Mémoire de Recherche"}
+            academicLevel={project?.academicLevel || "Université Omar Bongo (UOB Libreville) — Master 2"}
+            studentName={remoteOrder?.full_name || "Grace Mba"}
+            completionDate="14 Septembre 2026"
+            onClose={() => setShowCertificate(false)}
+          />
         </DialogContent>
       </Dialog>
     </main>

@@ -300,49 +300,97 @@ function Home() {
         </div>
       </section>
 
-      {/* Footer (Localisé au Gabon) */}
+      {/* Footer (Localisé au Gabon & Documents Légaux de Production) */}
       <footer className="border-t border-border bg-primary py-12 text-primary-foreground">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 md:grid-cols-3">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 sm:grid-cols-2 md:grid-cols-4">
           <div>
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
               <span className="font-serif text-lg font-semibold">MémoirePro Gabon</span>
             </div>
-            <p className="mt-3 text-sm opacity-80">
-              Service professionnel d'accompagnement académique et de rédaction pour étudiants et chercheurs au Gabon.
+            <p className="mt-3 text-xs leading-relaxed opacity-80">
+              Service professionnel d'accompagnement académique et de rédaction pour étudiants et chercheurs au Gabon (UOB, USTM, INSG, USS).
             </p>
             <p className="mt-2 text-xs opacity-70">
               Libreville · Port-Gentil · Franceville
             </p>
           </div>
+
           <div>
-            <h4 className="font-serif text-sm font-semibold uppercase tracking-wider opacity-90">
+            <h4 className="font-serif text-xs font-semibold uppercase tracking-wider opacity-90">
               Contact & Assistance Gabon
             </h4>
-            <ul className="mt-3 space-y-2 text-sm opacity-80">
+            <ul className="mt-3 space-y-2 text-xs opacity-80">
               <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <span>WhatsApp Gabon :</span>
+                <Phone className="h-3.5 w-3.5" />
+                <span>WhatsApp :</span>
                 <a href="tel:+24174000000" className="hover:underline font-mono">
                   +241 74 00 00 00
                 </a>
               </li>
               <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4" /> contact@memoirepro.ga
+                <Mail className="h-3.5 w-3.5" /> contact@memoirepro.ga
+              </li>
+              <li className="pt-1 text-[11px] opacity-75">
+                Règlements sécurisés Airtel Money & Moov Money.
               </li>
             </ul>
           </div>
+
           <div>
-            <h4 className="font-serif text-sm font-semibold uppercase tracking-wider opacity-90">
-              Confidentialité & Rigueur
+            <h4 className="font-serif text-xs font-semibold uppercase tracking-wider opacity-90">
+              Cadre Juridique Gabon
             </h4>
-            <p className="mt-3 text-sm opacity-80">
-              Vos documents, thèmes et données personnelles restent strictement confidentiels et ne sont jamais divulgués.
-            </p>
+            <ul className="mt-3 space-y-2 text-xs opacity-80">
+              <li>
+                <Link to="/cgv" className="hover:underline">
+                  Conditions Générales (CGV / CGU)
+                </Link>
+              </li>
+              <li>
+                <Link to="/confidentialite" className="hover:underline">
+                  Confidentialité (Loi n° 001/2011)
+                </Link>
+              </li>
+              <li>
+                <Link to="/mentions-legales" className="hover:underline">
+                  Mentions Légales
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-serif text-xs font-semibold uppercase tracking-wider opacity-90">
+              Éthique & Certificats
+            </h4>
+            <ul className="mt-3 space-y-2 text-xs opacity-80">
+              <li>
+                <Link to="/charte-ethique" className="hover:underline">
+                  Charte Éthique & CAMES
+                </Link>
+              </li>
+              <li>
+                <Link to="/certificat" className="hover:underline flex items-center gap-1.5 text-amber-300 font-medium">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>Vérifier un Certificat</span>
+                </Link>
+              </li>
+              <li className="pt-1 text-[11px] opacity-75">
+                Anti-Plagiat certifié Turnitin & Compilatio &lt; 5%.
+              </li>
+            </ul>
           </div>
         </div>
-        <div className="mx-auto mt-10 max-w-6xl border-t border-primary-foreground/20 px-4 pt-6 text-center text-xs opacity-70">
-          © 2026 MémoirePro Gabon. Tous droits réservés.
+
+        <div className="mx-auto mt-10 max-w-6xl border-t border-primary-foreground/20 px-4 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs opacity-70 gap-3">
+          <p>© 2026 MémoirePro Gabon. Tous droits réservés.</p>
+          <div className="flex flex-wrap gap-4">
+            <Link to="/cgv" className="hover:underline">CGV</Link>
+            <Link to="/confidentialite" className="hover:underline">Confidentialité</Link>
+            <Link to="/charte-ethique" className="hover:underline">Charte Éthique</Link>
+            <Link to="/mentions-legales" className="hover:underline">Mentions Légales</Link>
+          </div>
         </div>
       </footer>
     </div>

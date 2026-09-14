@@ -13,7 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CertificatRouteImport } from './routes/certificat'
+import { Route as CgvRouteImport } from './routes/cgv'
+import { Route as CharteEthiqueRouteImport } from './routes/charte-ethique'
 import { Route as ClientRouteImport } from './routes/client'
+import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as RedacteurRouteImport } from './routes/redacteur'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated/profil'
@@ -38,9 +43,34 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CertificatRoute = CertificatRouteImport.update({
+  id: '/certificat',
+  path: '/certificat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CgvRoute = CgvRouteImport.update({
+  id: '/cgv',
+  path: '/cgv',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CharteEthiqueRoute = CharteEthiqueRouteImport.update({
+  id: '/charte-ethique',
+  path: '/charte-ethique',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClientRoute = ClientRouteImport.update({
   id: '/client',
   path: '/client',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RedacteurRoute = RedacteurRouteImport.update({
@@ -68,7 +98,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/certificat': typeof CertificatRoute
+  '/cgv': typeof CgvRoute
+  '/charte-ethique': typeof CharteEthiqueRoute
   '/client': typeof ClientRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/redacteur': typeof RedacteurRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/profil': typeof AuthenticatedProfilRoute
@@ -78,7 +113,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/certificat': typeof CertificatRoute
+  '/cgv': typeof CgvRoute
+  '/charte-ethique': typeof CharteEthiqueRoute
   '/client': typeof ClientRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/redacteur': typeof RedacteurRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/profil': typeof AuthenticatedProfilRoute
@@ -90,7 +130,12 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/certificat': typeof CertificatRoute
+  '/cgv': typeof CgvRoute
+  '/charte-ethique': typeof CharteEthiqueRoute
   '/client': typeof ClientRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/redacteur': typeof RedacteurRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
@@ -102,7 +147,12 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/certificat'
+    | '/cgv'
+    | '/charte-ethique'
     | '/client'
+    | '/confidentialite'
+    | '/mentions-legales'
     | '/redacteur'
     | '/sitemap.xml'
     | '/profil'
@@ -112,7 +162,12 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/certificat'
+    | '/cgv'
+    | '/charte-ethique'
     | '/client'
+    | '/confidentialite'
+    | '/mentions-legales'
     | '/redacteur'
     | '/sitemap.xml'
     | '/profil'
@@ -123,7 +178,12 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/admin'
     | '/auth'
+    | '/certificat'
+    | '/cgv'
+    | '/charte-ethique'
     | '/client'
+    | '/confidentialite'
+    | '/mentions-legales'
     | '/redacteur'
     | '/sitemap.xml'
     | '/_authenticated/profil'
@@ -135,7 +195,12 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  CertificatRoute: typeof CertificatRoute
+  CgvRoute: typeof CgvRoute
+  CharteEthiqueRoute: typeof CharteEthiqueRoute
   ClientRoute: typeof ClientRoute
+  ConfidentialiteRoute: typeof ConfidentialiteRoute
+  MentionsLegalesRoute: typeof MentionsLegalesRoute
   RedacteurRoute: typeof RedacteurRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   PaiementRetourRoute: typeof PaiementRetourRoute
@@ -171,11 +236,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/certificat': {
+      id: '/certificat'
+      path: '/certificat'
+      fullPath: '/certificat'
+      preLoaderRoute: typeof CertificatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cgv': {
+      id: '/cgv'
+      path: '/cgv'
+      fullPath: '/cgv'
+      preLoaderRoute: typeof CgvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/charte-ethique': {
+      id: '/charte-ethique'
+      path: '/charte-ethique'
+      fullPath: '/charte-ethique'
+      preLoaderRoute: typeof CharteEthiqueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/client': {
       id: '/client'
       path: '/client'
       fullPath: '/client'
       preLoaderRoute: typeof ClientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confidentialite': {
+      id: '/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/confidentialite'
+      preLoaderRoute: typeof ConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mentions-legales': {
+      id: '/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof MentionsLegalesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/redacteur': {
@@ -225,7 +325,12 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  CertificatRoute: CertificatRoute,
+  CgvRoute: CgvRoute,
+  CharteEthiqueRoute: CharteEthiqueRoute,
   ClientRoute: ClientRoute,
+  ConfidentialiteRoute: ConfidentialiteRoute,
+  MentionsLegalesRoute: MentionsLegalesRoute,
   RedacteurRoute: RedacteurRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   PaiementRetourRoute: PaiementRetourRoute,
