@@ -13,6 +13,7 @@ import {
 
 import heroImg from "@/assets/hero-thesis.jpg";
 import { Button } from "@/components/ui/button";
+import AuthButton from "@/components/AuthButton";
 import OrderForm from "@/components/OrderForm";
 
 export const Route = createFileRoute("/")({
