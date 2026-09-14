@@ -7,6 +7,7 @@ import {
   updateDoc, 
   query, 
   orderBy, 
+  where,
   serverTimestamp,
   type Timestamp 
 } from "firebase/firestore";
@@ -136,5 +137,55 @@ export async function updateFirebaseOrderStatus(
   } catch (error) {
     console.warn(`[Firebase] Erreur lors de la mise à jour de ${orderId}:`, error);
     return false;
+  }
+}
+
+/**
+ * Retrieve a single order by ID or orderId from Firestore
+ */
+export async function fetchFirebaseOrder(orderId: string): Promise<FirebaseOrderData | null> {
+  try {
+    const docRef = doc(db, "orders", orderId);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return { ...(snap.data() as FirebaseOrderData), id: snap.id };
+    }
+    const q = query(collection(db, "orders"), where("orderId", "==", orderId));
+    const snapQ = await getDocs(q);
+    if (!snapQ.empty) {
+      const first = snapQ.docs[0];
+      return { ...(first.data() as FirebaseOrderData), id: first.id };
+    }
+    return null;
+  } catch (err) {
+    console.warn(`[Firebase] Erreur recherche commande ${orderId}:`, err);
+    return null;
+  }
+}
+
+/**
+ * Retrieve all orders for a specific user (by userId or clientEmail) from Firestore
+ */
+export async function fetchUserOrders(userId?: string, userEmail?: string): Promise<FirebaseOrderData[]> {
+  try {
+    const orders: FirebaseOrderData[] = [];
+    if (userId) {
+      const q = query(collection(db, "orders"), where("userId", "==", userId));
+      const snap = await getDocs(q);
+      snap.forEach((d) => orders.push({ ...(d.data() as FirebaseOrderData), id: d.id }));
+    }
+    if (userEmail) {
+      const q = query(collection(db, "orders"), where("clientEmail", "==", userEmail));
+      const snap = await getDocs(q);
+      snap.forEach((d) => {
+        if (!orders.some((o) => o.orderId === d.id || o.id === d.id)) {
+          orders.push({ ...(d.data() as FirebaseOrderData), id: d.id });
+        }
+      });
+    }
+    return orders;
+  } catch (err) {
+    console.warn("[Firebase] Erreur récupération commandes utilisateur:", err);
+    return [];
   }
 }

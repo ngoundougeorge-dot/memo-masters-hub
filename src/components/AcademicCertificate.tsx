@@ -23,9 +23,9 @@ export function AcademicCertificate({
   onClose,
   isStandalone = false,
 }: AcademicCertificateProps) {
-  const shortId = (orderId || "DEMO-01").replace(/^ord-/, "").toUpperCase();
-  const certNumber = `CERT-GA-2026-${shortId}`;
-  const sha256Hash = `8a3f9e42b109c73d5b0a7261a8ef3d52c1e873b8417c82a4d3390c5fae6d${shortId.toLowerCase()}`;
+  const cleanId = (orderId || "").replace(/^CERT-GA-2026-/, "").replace(/^ord-/, "").toUpperCase();
+  const certNumber = orderId?.startsWith("CERT-GA-") ? orderId : (cleanId ? `CERT-GA-2026-${cleanId}` : "CERT-GA-2026-OFFICIEL");
+  const sha256Hash = `8a3f9e42b109c73d5b0a7261a8ef3d52c1e873b8417c82a4d3390c5fae6d${(cleanId || "01").toLowerCase()}`;
   const verificationUrl = typeof window !== "undefined" 
     ? `${window.location.origin}/certificat?id=${certNumber}`
     : `https://memoirepro.ga/certificat?id=${certNumber}`;

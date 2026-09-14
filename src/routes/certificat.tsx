@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, BookOpen, CheckCircle2, FileSearch, Search, ShieldCheck } from "lucide-react";
+import { Award, BookOpen, CheckCircle2, FileSearch, Search, ShieldCheck, Clock, AlertCircle, Loader2 } from "lucide-react";
 import { AcademicCertificate } from "@/components/AcademicCertificate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { fetchFirebaseOrder } from "@/integrations/firebase";
+import { getProjectData, type ProjectDetails } from "@/lib/projectStore";
 
 type CertificatSearch = {
   id?: string;
@@ -29,42 +31,73 @@ export const Route = createFileRoute("/certificat")({
   component: CertificatVerificationPage,
 });
 
-const DEMO_CERTIFICATES: Record<
-  string,
-  { subject: string; level: string; student: string; date: string }
-> = {
-  "CERT-GA-2026-8A3F": {
-    subject: "L'impact du mobile money (Airtel & Moov) sur l'inclusion financière des PME au Gabon",
-    level: "Université Omar Bongo (UOB Libreville) — Master 2 Finance & Banque",
-    student: "Grace Mba",
-    date: "14 Septembre 2026",
-  },
-  "CERT-GA-2026-3B9C": {
-    subject: "Audit de la conformité RSE des entreprises de transformation du bois au Gabon",
-    level: "Institut National des Sciences de Gestion (INSG Libreville) — Master 1 Management",
-    student: "Nadège Biyogo",
-    date: "10 Septembre 2026",
-  },
-  "CERT-GA-2026-ORD-DEMO-01": {
-    subject: "L'impact du mobile money (Airtel & Moov) sur l'inclusion financière des PME au Gabon",
-    level: "Université Omar Bongo (UOB Libreville) — Master 2 Finance & Banque",
-    student: "Grace Mba",
-    date: "14 Septembre 2026",
-  },
-};
-
 function CertificatVerificationPage() {
   const search = Route.useSearch();
-  const [queryInput, setQueryInput] = useState(search.id || "CERT-GA-2026-8A3F");
-  const [activeCertId, setActiveCertId] = useState(search.id || "CERT-GA-2026-8A3F");
+  const [queryInput, setQueryInput] = useState(search.id || "");
+  const [activeCertId, setActiveCertId] = useState(search.id || "");
+  const [project, setProject] = useState<ProjectDetails | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(Boolean(search.id));
 
-  const normalizedId = activeCertId.trim().toUpperCase();
-  const certData = DEMO_CERTIFICATES[normalizedId] || {
-    subject: "Recherche académique appliquée & Mémoire universitaire certifié",
-    level: "Enseignement Supérieur Gabon — Grade Master / CAMES",
-    student: "Candidat(e) Certifié(e)",
-    date: "Septembre 2026",
-  };
+  useEffect(() => {
+    if (!activeCertId.trim()) {
+      setProject(null);
+      setSearched(false);
+      return;
+    }
+
+    setLoading(true);
+    setSearched(true);
+    const cleanId = activeCertId.trim().replace(/^CERT-GA-2026-/, "").toUpperCase();
+
+    // 1. Recherche dans le magasin local
+    const local = getProjectData(cleanId);
+    if (local && local.clientName && local.clientName !== "Étudiant(e)") {
+      setProject(local);
+      setLoading(false);
+      return;
+    }
+
+    // 2. Recherche dans Cloud Firestore (production)
+    fetchFirebaseOrder(cleanId)
+      .then((fb) => {
+        if (fb) {
+          const loaded: ProjectDetails = {
+            id: fb.id.startsWith("PRJ-") ? fb.id : `PRJ-2026-${cleanId.slice(0, 6)}`,
+            orderId: fb.orderId || cleanId,
+            userId: fb.userId,
+            clientName: fb.clientName || "Étudiant(e)",
+            clientEmail: fb.clientEmail || "",
+            clientPhone: fb.clientPhone || "",
+            subject: fb.subject || "Mémoire Académique",
+            documentType: fb.documentType || "memoire_master",
+            academicLevel: fb.academicLevel || "Enseignement Supérieur Gabon",
+            pages: fb.pages || 60,
+            objective: fb.instructions || "",
+            means: "Audit anti-plagiat Turnitin et conformité CAMES.",
+            deadline: fb.createdAt?.toDate ? fb.createdAt.toDate().toISOString() : (fb.createdAt || new Date().toISOString()),
+            priceFcfa: fb.priceFcfa || 75000,
+            paymentMethod: fb.paymentMethod || "Airtel Money Gabon",
+            paymentConfirmed: fb.paymentConfirmed || fb.status === "en_cours" || fb.status === "terminé",
+            isCompleted: fb.status === "terminé" || fb.status === "envoyé",
+            finalReportReady: fb.status === "terminé" || fb.status === "envoyé",
+            hasPlan: false,
+            hasGuidelines: false,
+            hasCoverPage: false,
+            milestones: [],
+            messages: [],
+          };
+          setProject(loaded);
+        } else {
+          setProject(null);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setProject(null);
+        setLoading(false);
+      });
+  }, [activeCertId]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,15 +167,64 @@ function CertificatVerificationPage() {
             </form>
           </div>
 
-          {/* Rendu du Certificat Officiel */}
-          <AcademicCertificate
-            orderId={normalizedId}
-            projectSubject={certData.subject}
-            academicLevel={certData.level}
-            studentName={certData.student}
-            completionDate={certData.date}
-            isStandalone={true}
-          />
+          {/* Chargement */}
+          {loading && (
+            <div className="flex items-center justify-center p-12 text-muted-foreground gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span>Interrogation du registre officiel...</span>
+            </div>
+          )}
+
+          {/* Résultat : Aucun document trouvé */}
+          {!loading && searched && !project && (
+            <Card className="border-destructive/30 bg-destructive/5 p-6 text-center shadow-sm">
+              <AlertCircle className="mx-auto h-10 w-10 text-destructive mb-2" />
+              <h3 className="font-serif text-lg font-bold text-foreground">
+                Certificat introuvable
+              </h3>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto mt-1">
+                Aucun document certifié ne correspond à la référence « <strong className="font-mono text-foreground">{activeCertId}</strong> » dans le registre officiel de vérification. Vérifiez le code inscrit sur le manuscrit.
+              </p>
+            </Card>
+          )}
+
+          {/* Résultat : Projet trouvé mais pas encore terminé */}
+          {!loading && searched && project && !project.isCompleted && (
+            <Card className="border-amber-500/30 bg-amber-500/10 p-6 text-center shadow-sm">
+              <Clock className="mx-auto h-10 w-10 text-amber-600 mb-2" />
+              <h3 className="font-serif text-lg font-bold text-foreground">
+                Projet en cours de rédaction
+              </h3>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto mt-1">
+                Le document « <strong className="text-foreground">{project.subject}</strong> » (Réf: {project.id}) est actuellement en cours de rédaction par nos équipes académiques. Le certificat officiel anti-plagiat sera validé et délivré dès l'achèvement complet du travail.
+              </p>
+            </Card>
+          )}
+
+          {/* Résultat : Projet terminé & certifié */}
+          {!loading && searched && project && project.isCompleted && (
+            <AcademicCertificate
+              orderId={project.id}
+              projectSubject={project.subject}
+              academicLevel={project.academicLevel || "Enseignement Supérieur Gabon"}
+              studentName={project.clientName || "Candidat(e) Certifié(e)"}
+              completionDate={new Date(project.deadline).toLocaleDateString("fr-FR", { dateStyle: "long" })}
+              isStandalone={true}
+            />
+          )}
+
+          {/* État initial : Pas encore de recherche */}
+          {!searched && !loading && (
+            <Card className="border-border/60 bg-muted/20 p-8 text-center shadow-xs">
+              <ShieldCheck className="mx-auto h-10 w-10 text-primary/70 mb-2" />
+              <h3 className="font-serif text-base font-bold text-foreground">
+                Entrez une référence officielle pour vérifier l'authenticité
+              </h3>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto mt-1">
+                Le certificat garantit un taux anti-plagiat inférieur à 5%, la conformité aux exigences CAMES et la validité académique du mémoire.
+              </p>
+            </Card>
+          )}
 
           {/* Note explicative pour les Jurys et Enseignants (masquée à l'impression) */}
           <Card className="border-border/60 bg-muted/30 print:hidden">

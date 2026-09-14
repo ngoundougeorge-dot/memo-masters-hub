@@ -50,53 +50,9 @@ export type AdminUser = {
   created_at: string;
 };
 
-// Initial mock dataset for seamless offline / demo mode
-const DEFAULT_MOCK_USERS: AdminUser[] = [
-  {
-    id: "usr-01",
-    full_name: "Patrick Nguema",
-    email: "patrick.nguema@uob.ga",
-    phone: "+241 77 12 34 56",
-    role: "client",
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
-  },
-  {
-    id: "usr-02",
-    full_name: "Dr. Stéphane Ondo",
-    email: "dr.s.ondo@redacteur-uob.ga",
-    phone: "+241 74 98 76 54",
-    role: "redacteur",
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 45).toISOString(),
-  },
-  {
-    id: "usr-03",
-    full_name: "Grace Mba",
-    email: "grace.mba@insg.ga",
-    phone: "+241 66 54 32 10",
-    role: "client",
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-  },
-  {
-    id: "usr-04",
-    full_name: "Nadège Biyogo",
-    email: "nadege.biyogo@ustm.ga",
-    phone: "+241 77 88 99 00",
-    role: "redacteur",
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 60).toISOString(),
-  },
-  {
-    id: "usr-05",
-    full_name: "Administrateur MémoirePro Gabon",
-    email: "admin@memoirepro.ga",
-    phone: "+241 74 00 00 00",
-    role: "admin",
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 120).toISOString(),
-  },
-];
-
 function AdminDashboard() {
-  const [users, setUsers] = useState<AdminUser[]>(DEFAULT_MOCK_USERS);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<"all" | "client" | "redacteur" | "admin">("all");
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -157,9 +113,7 @@ function AdminDashboard() {
         console.warn("[Admin] Firestore users fetch skipped:", fbErr);
       }
 
-      if (merged.length > 0) {
-        setUsers(merged);
-      }
+      setUsers(merged);
     } catch (err) {
       console.warn("[Admin] Supabase offline or unconfigured, running in local/PWA mode.");
     } finally {

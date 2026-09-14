@@ -45,13 +45,14 @@ import {
   getProjectData,
   saveProjectData,
   addProjectMessage,
+  getDefaultMilestones,
   type ProjectDetails,
   type Milestone,
 } from "@/lib/projectStore";
 import { TiltCard } from "@/components/TiltCard";
 import { AcademicCertificate } from "@/components/AcademicCertificate";
 import { RoleGuard } from "@/components/RoleGuard";
-import { useAuth } from "@/integrations/firebase";
+import { useAuth, fetchUserOrders, fetchFirebaseOrder } from "@/integrations/firebase";
 
 type ClientSearch = {
   order_id?: string;
@@ -89,7 +90,24 @@ function ClientDashboard() {
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [showCertificate, setShowCertificate] = useState<boolean>(false);
 
-  // Fallback to local order ID if not provided in search params
+  // Synchronisation avec les commandes réelles Firestore de l'utilisateur connecté
+  useEffect(() => {
+    async function loadUserOrders() {
+      if (!user) return;
+      try {
+        const userOrders = await fetchUserOrders(user.uid, user.email || undefined);
+        if (userOrders.length > 0 && !activeOrderId) {
+          const latest = userOrders[0];
+          setActiveOrderId(latest.orderId || latest.id);
+        }
+      } catch (err) {
+        console.warn("[Client] Erreur chargement commandes utilisateur:", err);
+      }
+    }
+    loadUserOrders();
+  }, [user, activeOrderId]);
+
+  // Repli sur l'ID de commande local si non spécifié dans l'URL
   useEffect(() => {
     if (!activeOrderId && typeof window !== "undefined") {
       const raw = localStorage.getItem("memoirepro_orders");
@@ -104,11 +122,52 @@ function ClientDashboard() {
     }
   }, [activeOrderId]);
 
-  // Load project details
+  // Chargement des données réelles du projet (LocalStore + Firestore)
   useEffect(() => {
-    if (!activeOrderId) return;
-    const data = getProjectData(activeOrderId);
-    setProject(data);
+    if (!activeOrderId) {
+      setProject(null);
+      return;
+    }
+    const localData = getProjectData(activeOrderId);
+    setProject(localData);
+
+    // Synchronisation avec Firestore en production
+    fetchFirebaseOrder(activeOrderId).then((fbOrder) => {
+      if (fbOrder) {
+        const fullProj: ProjectDetails = {
+          id: fbOrder.id.startsWith("PRJ-") ? fbOrder.id : `PRJ-2026-${activeOrderId.slice(0, 6).toUpperCase()}`,
+          orderId: activeOrderId,
+          userId: fbOrder.userId,
+          clientName: fbOrder.clientName || "Étudiant",
+          clientEmail: fbOrder.clientEmail || "",
+          clientPhone: fbOrder.clientPhone || "",
+          subject: fbOrder.subject || "Mémoire Académique",
+          documentType: fbOrder.documentType || "memoire_master",
+          academicLevel: fbOrder.academicLevel || "",
+          pages: fbOrder.pages || 60,
+          objective: fbOrder.instructions || `Rédaction complète (${fbOrder.pages || 60} pages).`,
+          means: "Documentation scientifique spécialisée et contrôle anti-plagiat.",
+          deadline: fbOrder.createdAt?.toDate ? fbOrder.createdAt.toDate().toISOString() : (fbOrder.createdAt || new Date().toISOString()),
+          priceFcfa: fbOrder.priceFcfa || 75000,
+          paymentMethod: fbOrder.paymentMethod || "Airtel Money Gabon",
+          paymentConfirmed: fbOrder.paymentConfirmed || fbOrder.status === "en_cours" || fbOrder.status === "terminé",
+          isCompleted: fbOrder.status === "terminé" || fbOrder.status === "envoyé",
+          finalReportReady: fbOrder.status === "terminé" || fbOrder.status === "envoyé",
+          hasPlan: Boolean(fbOrder.planText),
+          planText: fbOrder.planText || "",
+          hasGuidelines: Boolean(fbOrder.guidelinesText),
+          guidelinesText: fbOrder.guidelinesText || "",
+          hasCoverPage: Boolean(fbOrder.coverPageText),
+          coverPageText: fbOrder.coverPageText || "",
+          filePaths: fbOrder.fileUrls || [],
+          createdAt: fbOrder.createdAt?.toDate ? fbOrder.createdAt.toDate().toISOString() : (fbOrder.createdAt || new Date().toISOString()),
+          milestones: localData?.milestones || getDefaultMilestones(activeOrderId, fbOrder.documentType || "memoire_master"),
+          messages: localData?.messages || [],
+        };
+        setProject(fullProj);
+        saveProjectData(fullProj);
+      }
+    }).catch(() => {});
   }, [activeOrderId]);
 
   // Refresh project periodically
@@ -175,15 +234,6 @@ function ClientDashboard() {
       setUploadingDoc(false);
       toast.success(`${files.length} document(s) complémentaire(s) transmis au rédacteur.`);
     }, 600);
-  };
-
-  // Simulate on-site payment confirmation (for demo / testing)
-  const handleSimulatePayment = () => {
-    if (!project) return;
-    project.paymentConfirmed = true;
-    saveProjectData(project);
-    setProject({ ...project });
-    toast.success("Paiement validé avec succès ! Accès aux jalons déverrouillé.");
   };
 
   return (
@@ -275,15 +325,6 @@ function ClientDashboard() {
               <Button asChild>
                 <Link to="/">Commander un mémoire</Link>
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const demoId = "ord-demo-01";
-                  setActiveOrderId(demoId);
-                }}
-              >
-                Voir une commande de démonstration
-              </Button>
             </div>
           </div>
         ) : (
@@ -373,22 +414,17 @@ function ClientDashboard() {
                   <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-serif text-sm font-bold text-amber-900">
-                        Paiement en attente de confirmation
+                      <h4 className="font-serif text-sm font-bold text-amber-900 dark:text-amber-300">
+                        Paiement en attente de validation par le rédacteur
                       </h4>
-                      <p className="text-xs text-amber-800/90 mt-0.5">
-                        Conformément au parcours de rédaction, les jalons du mémoire deviennent consultables dès que le paiement est validé par le rédacteur ou réglé sur le site.
+                      <p className="text-xs text-amber-800/90 dark:text-amber-400 mt-0.5">
+                        Effectuez votre règlement par <strong>Airtel Money (+241 74 00 00 00)</strong> ou <strong>Moov Money</strong> en mentionnant votre référence <strong>{project.orderId}</strong>. Dès validation par le rédacteur, l'accès aux jalons et aux chapitres sera activé.
                       </p>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={handleSimulatePayment}
-                    className="shrink-0 bg-amber-600 text-white hover:bg-amber-700 text-xs"
-                  >
-                    <CreditCard className="mr-1.5 h-3.5 w-3.5" />
-                    Simuler confirmation de paiement
-                  </Button>
+                  <Badge variant="outline" className="shrink-0 text-amber-700 dark:text-amber-300 border-amber-400 bg-amber-500/20 text-xs px-3 py-1">
+                    En attente de validation
+                  </Badge>
                 </div>
               </div>
             )}

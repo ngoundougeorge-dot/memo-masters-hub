@@ -46,6 +46,7 @@ import {
 import { TiltCard } from "@/components/TiltCard";
 import { RoleGuard } from "@/components/RoleGuard";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchFirebaseOrders } from "@/integrations/firebase";
 import {
   getProjectData,
   saveProjectData,
@@ -79,151 +80,14 @@ export const Route = createFileRoute("/redacteur")({
   component: WriterDashboard,
 });
 
-// Projets de démonstration initiaux au Gabon
-const INITIAL_WRITER_ORDERS: ProjectDetails[] = [
-  {
-    id: "PRJ-2026-8A3F",
-    orderId: "ord-demo-01",
-    clientName: "Grace Mba",
-    clientEmail: "grace.mba@uob.ga",
-    clientPhone: "+241 66 54 32 10",
-    subject: "L'impact du mobile money (Airtel & Moov) sur l'inclusion financière des PME au Gabon",
-    documentType: "memoire_master",
-    academicLevel: "Université Omar Bongo (UOB Libreville) — Master 2 Finance & Banque",
-    pages: 70,
-    objective:
-      "Rédaction complète d'un mémoire de 70 pages avec cadrage théorique, démarche empirique et recommandations adaptées au tissu économique gabonais.",
-    means:
-      "Revue de littérature universitaire (Cairn, JSTOR, revues CAMES), Rédacteur Senior dédié et analyse statistique.",
-    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString(),
-    priceFcfa: 150000,
-    paymentMethod: "Airtel Money Gabon",
-    paymentConfirmed: true,
-    isCompleted: false,
-    finalReportReady: false,
-    hasPlan: true,
-    planText:
-      "Introduction Générale & Problématique\nPartie 1 : Cadre théorique et revue documentaire de l'intermédiation financière\n  Chapitre 1 : Les modèles de mobile money en zone CEMAC\n  Chapitre 2 : L'environnement réglementaire BEAC/COBAC au Gabon\nPartie 2 : Démarche empirique et résultats\n  Chapitre 3 : Étude de cas sur 50 PME gabonaises (Libreville & Port-Gentil)\n  Chapitre 4 : Analyse critique et recommandations stratégiques\nConclusion Générale & Bibliographie CAMES",
-    hasGuidelines: true,
-    guidelinesText:
-      "Normes APA 7e édition, police Times New Roman 12, interligne 1.5, marges 2.5 cm. Données collectées auprès des commerces de Libreville et Port-Gentil. Validation du plan par le directeur de mémoire requise.",
-    hasCoverPage: true,
-    coverPageText:
-      "Logo UOB, Faculté de Droit et des Sciences Économiques (FDSE Libreville), Sous la direction du Pr. Nguema. Année académique 2025-2026.",
-    filePaths: ["consignes_uob_fdse.pdf", "questionnaire_pme_libreville.docx"],
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    milestones: [
-      {
-        id: "ms-1",
-        orderId: "ord-demo-01",
-        stepNumber: 1,
-        title: "Jalon 1 : Cadrage, Problématique & Plan détaillé",
-        contentPreview:
-          "Problématique validée : Dans quelle mesure les solutions de paiement mobile favorisent-elles la résilience financière des PME informelles au Gabon ?",
-        status: "valide",
-        submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
-        writerNotes: "Plan aligné sur les exigences académiques de l'UOB et les normes CAMES.",
-      },
-      {
-        id: "ms-2",
-        orderId: "ord-demo-01",
-        stepNumber: 2,
-        title: "Jalon 2 : Revue de Littérature & Cadre Conceptuel",
-        contentPreview:
-          "Analyse comparée des théories de l'intermédiation financière et de l'inclusion numérique en zone CEMAC (BEAC, COBAC).",
-        status: "soumis",
-        submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
-        writerNotes: "Prêt pour consultation par l'étudiant.",
-      },
-      {
-        id: "ms-3",
-        orderId: "ord-demo-01",
-        stepNumber: 3,
-        title: "Jalon 3 : Analyse des Données & Résultats Empiriques",
-        contentPreview:
-          "Traitement des questionnaires et analyse économétrique de l'accès au crédit court terme à Libreville.",
-        status: "en_cours",
-        writerNotes: "En cours de finalisation.",
-      },
-      {
-        id: "ms-4",
-        orderId: "ord-demo-01",
-        stepNumber: 4,
-        title: "Jalon 4 : Conclusion Générale & Recommandations",
-        contentPreview:
-          "Synthèse des apports, limites méthodologiques et recommandations pour les régulateurs gabonais.",
-        status: "en_attente",
-      },
-    ],
-    messages: [
-      {
-        id: "m-1",
-        orderId: "ord-demo-01",
-        sender: "client",
-        senderName: "Grace Mba (Étudiante UOB)",
-        content:
-          "Bonjour Dr. Ondo, j'ai bien consulté le Jalon 1. Le plan me convient parfaitement, mon encadreur à l'UOB a validé les deux axes !",
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
-      },
-      {
-        id: "m-2",
-        orderId: "ord-demo-01",
-        sender: "redacteur",
-        senderName: "Dr. Stéphane Ondo (Rédacteur)",
-        content:
-          "Excellente nouvelle Grace ! Je viens de déposer le Jalon 2 (revue de littérature) dans votre espace pour consultation.",
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
-      },
-    ],
-  },
-  {
-    id: "PRJ-2026-3B9C",
-    orderId: "ord-demo-02",
-    clientName: "Nadège Biyogo",
-    clientEmail: "nadege.biyogo@insg.ga",
-    clientPhone: "+241 77 88 99 00",
-    subject: "Audit de la conformité RSE des entreprises de transformation du bois au Gabon",
-    documentType: "rapport_stage",
-    academicLevel: "Institut National des Sciences de Gestion (INSG Libreville) — Master 1 Management",
-    pages: 45,
-    objective:
-      "Rapport de stage de 45 pages évaluant l'impact environnemental et sociétal des exploitants de la zone économique de Nkok.",
-    means:
-      "Guides RSE ISO 26000, Rapports sectoriels Gabon, revues scientifiques et Rédacteur Senior.",
-    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
-    priceFcfa: 40000,
-    paymentMethod: "Moov Money (Gabon Telecom)",
-    paymentConfirmed: false,
-    isCompleted: false,
-    finalReportReady: false,
-    hasPlan: true,
-    planText:
-      "Partie 1 : Présentation de l'entreprise et diagnostic RSE\nPartie 2 : Analyse des impacts environnementaux et recommandations",
-    hasGuidelines: true,
-    guidelinesText: "Normes académiques INSG Libreville, interligne 1.5, 45 pages maximum.",
-    hasCoverPage: true,
-    coverPageText:
-      "INSG Libreville — Master 1 Management des Organisations. Encadreur en entreprise : M. Obiang.",
-    filePaths: ["grille_evaluation_rse.xlsx"],
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-    milestones: [
-      {
-        id: "ms-2-1",
-        orderId: "ord-demo-02",
-        stepNumber: 1,
-        title: "Jalon 1 : Présentation de l'entreprise & Diagnostic RSE",
-        contentPreview:
-          "Présentation des activités, cartographie des parties prenantes et grille d'évaluation sectorielle Gabon.",
-        status: "en_attente",
-      },
-    ],
-    messages: [],
-  },
-];
-
 function WriterDashboard() {
-  const [projects, setProjects] = useState<ProjectDetails[]>(INITIAL_WRITER_ORDERS);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>(INITIAL_WRITER_ORDERS[0].orderId);
+  const [projects, setProjects] = useState<ProjectDetails[]>(() => {
+    if (typeof window !== "undefined") {
+      return getAllProjects();
+    }
+    return [];
+  });
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [chatMessage, setChatMessage] = useState<string>("");
   const [newMilestoneTitle, setNewMilestoneTitle] = useState<string>("");
   const [newMilestonePreview, setNewMilestonePreview] = useState<string>("");
@@ -233,20 +97,70 @@ function WriterDashboard() {
 
   // Active project
   const activeProject = useMemo(() => {
-    return projects.find((p) => p.orderId === selectedProjectId) || projects[0];
+    return projects.find((p) => p.orderId === selectedProjectId) || projects[0] || null;
   }, [projects, selectedProjectId]);
 
-  // Synchronisation des Projets (LocalStore + Supabase)
+  // Synchronisation des Projets réels depuis le backend (Firebase Firestore + Supabase + LocalStore)
   const syncProjects = async () => {
     setLoadingRemote(true);
     const map = new Map<string, ProjectDetails>();
 
-    // 1. Initialiser avec les démos par défaut
-    INITIAL_WRITER_ORDERS.forEach((p) => map.set(p.orderId, p));
-
-    // 2. Charger tous les projets créés localement (localStorage)
+    // 1. Charger tous les projets réels enregistrés localement
     const localProjects = getAllProjects();
     localProjects.forEach((p) => map.set(p.orderId, p));
+
+    // 2. Charger les commandes réelles Cloud Firestore
+    try {
+      const fbOrders = await fetchFirebaseOrders();
+      fbOrders.forEach((row) => {
+        const orderId = row.orderId || row.id;
+        if (!map.has(orderId)) {
+          const p: ProjectDetails = {
+            id: row.id.startsWith("PRJ-") ? row.id : `PRJ-2026-${orderId.slice(0, 6).toUpperCase()}`,
+            orderId,
+            userId: row.userId,
+            clientName: row.clientName || "Étudiant",
+            clientEmail: row.clientEmail || "",
+            clientPhone: row.clientPhone || "",
+            subject: row.subject || "Mémoire Académique",
+            documentType: row.documentType || "memoire_master",
+            academicLevel: row.academicLevel || "",
+            pages: row.pages || 60,
+            objective: row.instructions || `Rédaction complète (${row.pages || 60} pages).`,
+            means: "Documentation universitaire spécialisée et contrôle anti-plagiat.",
+            deadline: row.createdAt?.toDate ? row.createdAt.toDate().toISOString() : (row.createdAt || new Date().toISOString()),
+            priceFcfa: row.priceFcfa || 75000,
+            paymentMethod: row.paymentMethod || "Airtel Money Gabon",
+            paymentConfirmed: row.paymentConfirmed || row.status === "en_cours" || row.status === "terminé",
+            isCompleted: row.status === "terminé" || row.status === "envoyé",
+            finalReportReady: row.status === "terminé" || row.status === "envoyé",
+            hasPlan: Boolean(row.planText),
+            planText: row.planText || "",
+            hasGuidelines: Boolean(row.guidelinesText),
+            guidelinesText: row.guidelinesText || "",
+            hasCoverPage: Boolean(row.coverPageText),
+            coverPageText: row.coverPageText || "",
+            filePaths: row.fileUrls || [],
+            createdAt: row.createdAt?.toDate ? row.createdAt.toDate().toISOString() : (row.createdAt || new Date().toISOString()),
+            milestones: [
+              {
+                id: `ms-${orderId}-1`,
+                orderId,
+                stepNumber: 1,
+                title: "Jalon 1 : Cadrage, Problématique & Plan détaillé",
+                contentPreview: "Validation de la problématique et de la structure du plan.",
+                status: "en_attente",
+                submittedAt: row.createdAt?.toDate ? row.createdAt.toDate().toISOString() : (row.createdAt || new Date().toISOString()),
+              },
+            ],
+            messages: [],
+          };
+          map.set(orderId, p);
+        }
+      });
+    } catch (fbErr) {
+      console.warn("[WriterDashboard] Erreur récupération Firebase:", fbErr);
+    }
 
     // 3. Charger les commandes distantes Supabase si disponibles
     try {
@@ -258,8 +172,7 @@ function WriterDashboard() {
       if (remoteOrders && remoteOrders.length > 0) {
         remoteOrders.forEach((row: any) => {
           if (!map.has(row.id)) {
-            // Parser les instructions si formatées en JSON
-            let parsedGuidelines = row.instructions || "Consignes transmises par le client";
+            let parsedGuidelines = row.instructions || "";
             let parsedPlan = "";
             let parsedCover = "";
             try {
@@ -274,14 +187,14 @@ function WriterDashboard() {
             const p: ProjectDetails = {
               id: `PRJ-2026-${row.id.slice(0, 6).toUpperCase()}`,
               orderId: row.id,
-              clientName: row.full_name || "Étudiant Référent",
+              clientName: row.full_name || "Étudiant",
               clientEmail: row.email || "",
               clientPhone: row.phone || "",
               subject: row.subject || "Mémoire Académique",
               documentType: row.document_type || "memoire_master",
-              academicLevel: row.academic_level || "Université Omar Bongo — Master 2",
+              academicLevel: row.academic_level || "",
               pages: row.pages || 60,
-              objective: `Rédaction complète (${row.pages || 60} pages) selon les exigences académiques CAMES.`,
+              objective: `Rédaction complète (${row.pages || 60} pages).`,
               means:
                 "Documentation scientifique spécialisée, Rédacteur Senior dédié et contrôle anti-plagiat Turnitin.",
               deadline: row.deadline || new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString(),
@@ -485,8 +398,26 @@ function WriterDashboard() {
           </div>
         </div>
 
-        {/* PIPELINE LINÉAIRE EN 5 ÉTAPES */}
-        <div className="rounded-xl border border-border/80 bg-muted/20 p-4">
+        {!activeProject ? (
+          <div className="rounded-2xl border border-border/80 bg-card p-12 text-center shadow-md">
+            <Briefcase className="mx-auto h-12 w-12 text-muted-foreground/50" />
+            <h3 className="mt-4 font-serif text-xl font-bold text-foreground">
+              Aucune commande enregistrée pour le moment
+            </h3>
+            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+              Dès qu'un étudiant valide une commande sur le site, son dossier complet (coordonnées, plan, consignes et documents) s'ouvre automatiquement ici.
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <Button onClick={syncProjects} variant="outline" size="sm" className="gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Actualiser
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* PIPELINE LINÉAIRE EN 5 ÉTAPES */}
+            <div className="rounded-xl border border-border/80 bg-muted/20 p-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Pipeline Officiel : De l'Inscription à la Livraison
@@ -1005,6 +936,8 @@ function WriterDashboard() {
             </Tabs>
           </div>
         </div>
+        </>
+      )}
       </div>
 
       {/* Modal d'Ajout de Jalon */}

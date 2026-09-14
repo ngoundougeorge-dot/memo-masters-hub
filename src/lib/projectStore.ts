@@ -59,7 +59,7 @@ export type ProjectDetails = {
 const STORAGE_PREFIX = "memoirepro_project_";
 const ALL_ORDERS_INDEX_KEY = "memoirepro_all_orders_index";
 
-// Mock template milestones when project is activated
+// Jalons standards de rédaction académique initialisés en attente
 export function getDefaultMilestones(orderId: string, docType: string): Milestone[] {
   return [
     {
@@ -68,10 +68,8 @@ export function getDefaultMilestones(orderId: string, docType: string): Mileston
       title: "Jalon 1 : Cadrage, Problématique & Plan détaillé",
       stepNumber: 1,
       contentPreview:
-        "Validation de la question de recherche, des objectifs généraux et spécifiques, et de la structure du plan en 2 parties et 4 chapitres.",
-      status: "valide",
-      submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-      writerNotes: "Plan aligné avec les consignes méthodologiques du directeur de mémoire.",
+        "Validation de la question de recherche, des objectifs généraux et spécifiques, et de la structure du plan.",
+      status: "en_attente",
     },
     {
       id: `ms-${orderId}-2`,
@@ -79,10 +77,8 @@ export function getDefaultMilestones(orderId: string, docType: string): Mileston
       title: "Jalon 2 : Revue de Littérature & Cadre Théorique",
       stepNumber: 2,
       contentPreview:
-        "Synthèse des auteurs de référence (25 articles et ouvrages académiques récents), définitions des concepts opératoires et hypothèses.",
-      status: "soumis",
-      submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-      writerNotes: "Revue théorique complète rédigée. Merci de consulter et donner votre avis.",
+        "Synthèse des auteurs de référence, définitions des concepts opératoires et hypothèses de recherche.",
+      status: "en_attente",
     },
     {
       id: `ms-${orderId}-3`,
@@ -90,9 +86,8 @@ export function getDefaultMilestones(orderId: string, docType: string): Mileston
       title: "Jalon 3 : Méthodologie, Analyse des Données & Résultats",
       stepNumber: 3,
       contentPreview:
-        "Traitement du corpus documentaire, analyse statistique / qualitative et interprétation des résultats empiriques.",
-      status: "en_cours",
-      writerNotes: "Rédaction en cours d'achèvement.",
+        "Traitement du corpus documentaire, analyse statistique ou qualitative et interprétation des résultats empiriques.",
+      status: "en_attente",
     },
     {
       id: `ms-${orderId}-4`,
@@ -100,25 +95,14 @@ export function getDefaultMilestones(orderId: string, docType: string): Mileston
       title: "Jalon 4 : Conclusion, Recommandations & Bibliographie APA",
       stepNumber: 4,
       contentPreview:
-        "Synthèse finale, limites de l'étude, recommandations managériales/scientifiques et bibliographie normalisée.",
+        "Synthèse finale, limites de l'étude, recommandations et bibliographie normalisée CAMES / APA.",
       status: "en_attente",
-      writerNotes: "Dernière étape avant finalisation globale.",
     },
   ];
 }
 
-export function getDefaultMessages(orderId: string): ProjectMessage[] {
-  return [
-    {
-      id: `msg-${orderId}-1`,
-      orderId,
-      sender: "redacteur",
-      senderName: "Dr. Stéphane Ondo (Rédacteur)",
-      content:
-        "Bonjour ! J'ai bien pris en compte votre sujet et vos consignes. Le plan détaillé a été finalisé et est disponible dans l'onglet Jalons pour votre consultation.",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    },
-  ];
+export function getDefaultMessages(_orderId: string): ProjectMessage[] {
+  return [];
 }
 
 export function getProjectData(orderId: string, fallbackSubject?: string): ProjectDetails {
@@ -171,31 +155,29 @@ export function getAllProjects(): ProjectDetails[] {
 }
 
 function createEmptyProject(orderId: string, subject?: string): ProjectDetails {
-  const shortId = orderId.slice(0, 6).toUpperCase();
+  const shortId = orderId.replace(/^ord-/, "").slice(0, 6).toUpperCase();
   return {
     id: `PRJ-2026-${shortId}`,
     orderId,
-    subject: subject || "Rédaction Académique Personnalisée",
+    subject: subject || "Rédaction Académique",
     documentType: "memoire_master",
-    academicLevel: "Université — Master 2",
-    objective:
-      "Rédaction complète et originale avec problématique, revue de littérature, démarche méthodologique rigoureuse et références vérifiées.",
-    means:
-      "Bases de données universitaires et revues scientifiques (Cairn, JSTOR, CAMES), Rédacteur Senior spécialisé et audit anti-plagiat Turnitin.",
-    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 18).toISOString(),
-    priceFcfa: 150000,
+    academicLevel: "",
+    objective: "Rédaction complète et originale selon les normes universitaires.",
+    means: "Documentation universitaire, sources vérifiées et audit anti-plagiat.",
+    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString(),
+    priceFcfa: 75000,
     paymentConfirmed: false,
     isCompleted: false,
     finalReportReady: false,
     finalReportUrl: "#",
-    hasPlan: true,
-    planText: "Plan en deux parties et 4 chapitres avec approche empirique.",
-    hasGuidelines: true,
-    guidelinesText: "Police Times New Roman 12, interligne 1.5, normes bibliographiques APA 7e.",
-    hasCoverPage: true,
-    coverPageText: "Mentionner l'Université, l'UFR, le Directeur de recherche et l'année académique 2025-2026.",
+    hasPlan: false,
+    planText: "",
+    hasGuidelines: false,
+    guidelinesText: "",
+    hasCoverPage: false,
+    coverPageText: "",
     milestones: getDefaultMilestones(orderId, "memoire_master"),
-    messages: getDefaultMessages(orderId),
+    messages: [],
   };
 }
 
