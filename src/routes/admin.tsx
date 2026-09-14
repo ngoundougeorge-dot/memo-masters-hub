@@ -284,7 +284,7 @@ function AdminDashboard() {
                   MémoirePro <span className="text-primary font-sans font-medium text-xs bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">ADMIN</span>
                 </h1>
                 <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 igloo-pulse-dot" />
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
                   Sécurisé
                 </span>
               </div>
@@ -300,12 +300,12 @@ function AdminDashboard() {
               size="sm"
               onClick={fetchUsers}
               disabled={loading}
-              className="gap-1.5 h-8 text-xs igloo-spring-btn"
+              className="gap-1.5 h-8 text-xs"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">Actualiser</span>
             </Button>
-            <Button asChild size="sm" className="h-8 text-xs bg-primary text-primary-foreground font-semibold gap-1.5 igloo-spring-btn">
+            <Button asChild size="sm" className="h-8 text-xs bg-primary text-primary-foreground font-semibold gap-1.5">
               <Link to="/redacteur">
                 <Briefcase className="h-3.5 w-3.5" />
                 <span>Espace Rédaction & Mémoires</span>
@@ -320,9 +320,9 @@ function AdminDashboard() {
 
       {/* Main Container */}
       <main className="mx-auto max-w-7xl px-4 pt-8 sm:px-6">
-        {/* KPI Cards (Igloo Inc. 3D Tilt) */}
+        {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
-          <TiltCard className="rounded-2xl border border-border/70 bg-card/80 p-5 shadow-sm igloo-glass">
+          <TiltCard className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Total Comptes
@@ -337,7 +337,7 @@ function AdminDashboard() {
             <p className="mt-1 text-xs text-muted-foreground">Profils enregistrés</p>
           </TiltCard>
 
-          <TiltCard className="rounded-2xl border border-emerald-500/20 bg-card/80 p-5 shadow-sm igloo-glass">
+          <TiltCard className="rounded-2xl border border-emerald-500/20 bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium uppercase tracking-wider text-emerald-600">
                 Clients
@@ -352,7 +352,7 @@ function AdminDashboard() {
             <p className="mt-1 text-xs text-muted-foreground">Commandes & mémoires</p>
           </TiltCard>
 
-          <TiltCard className="rounded-2xl border border-indigo-500/20 bg-card/80 p-5 shadow-sm igloo-glass">
+          <TiltCard className="rounded-2xl border border-indigo-500/20 bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium uppercase tracking-wider text-indigo-600">
                 Rédacteurs
@@ -367,7 +367,7 @@ function AdminDashboard() {
             <p className="mt-1 text-xs text-muted-foreground">Auteurs agréés</p>
           </TiltCard>
 
-          <TiltCard className="rounded-2xl border border-amber-500/20 bg-card/80 p-5 shadow-sm igloo-glass">
+          <TiltCard className="rounded-2xl border border-amber-500/20 bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium uppercase tracking-wider text-amber-600">
                 Admins
@@ -416,7 +416,7 @@ function AdminDashboard() {
               size="sm"
               variant={roleFilter === "all" ? "default" : "outline"}
               onClick={() => setRoleFilter("all")}
-              className="h-8 rounded-lg text-xs igloo-spring-btn"
+              className="h-8 rounded-lg text-xs"
             >
               Tous ({users.length})
             </Button>
@@ -424,7 +424,7 @@ function AdminDashboard() {
               size="sm"
               variant={roleFilter === "client" ? "default" : "outline"}
               onClick={() => setRoleFilter("client")}
-              className="h-8 rounded-lg text-xs igloo-spring-btn"
+              className="h-8 rounded-lg text-xs"
             >
               Clients ({stats.clients})
             </Button>
@@ -432,7 +432,7 @@ function AdminDashboard() {
               size="sm"
               variant={roleFilter === "redacteur" ? "default" : "outline"}
               onClick={() => setRoleFilter("redacteur")}
-              className="h-8 rounded-lg text-xs igloo-spring-btn"
+              className="h-8 rounded-lg text-xs"
             >
               Rédacteurs ({stats.redacteurs})
             </Button>
@@ -440,7 +440,7 @@ function AdminDashboard() {
               size="sm"
               variant={roleFilter === "admin" ? "default" : "outline"}
               onClick={() => setRoleFilter("admin")}
-              className="h-8 rounded-lg text-xs igloo-spring-btn"
+              className="h-8 rounded-lg text-xs"
             >
               Admins ({stats.admins})
             </Button>
@@ -448,7 +448,7 @@ function AdminDashboard() {
         </div>
 
         {/* Users Table / Grid */}
-        <div className="mt-4 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm igloo-glass">
+        <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           <div className="divide-y divide-border/60">
             {filteredUsers.length === 0 ? (
               <div className="p-12 text-center">
@@ -528,7 +528,7 @@ function AdminDashboard() {
                           variant="outline"
                           disabled={isProcessing}
                           onClick={() => handleToggleRole(u)}
-                          className="gap-2 h-9 rounded-xl border-indigo-200 text-xs font-medium text-indigo-700 hover:bg-indigo-50 hover:text-indigo-900 igloo-spring-btn shadow-xs"
+                          className="gap-2 h-9 rounded-xl border-indigo-200 text-xs font-medium text-indigo-700 hover:bg-indigo-50 hover:text-indigo-900 shadow-xs"
                         >
                           <ArrowRightLeft className={`h-3.5 w-3.5 ${isProcessing ? "animate-spin" : ""}`} />
                           <span>Passer en Rédacteur</span>
@@ -539,7 +539,7 @@ function AdminDashboard() {
                           variant="outline"
                           disabled={isProcessing}
                           onClick={() => handleToggleRole(u)}
-                          className="gap-2 h-9 rounded-xl border-emerald-200 text-xs font-medium text-emerald-700 hover:bg-emerald-50 hover:text-emerald-900 igloo-spring-btn shadow-xs"
+                          className="gap-2 h-9 rounded-xl border-emerald-200 text-xs font-medium text-emerald-700 hover:bg-emerald-50 hover:text-emerald-900 shadow-xs"
                         >
                           <ArrowRightLeft className={`h-3.5 w-3.5 ${isProcessing ? "animate-spin" : ""}`} />
                           <span>Passer en Client</span>

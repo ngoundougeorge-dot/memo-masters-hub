@@ -59,7 +59,7 @@ function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md igloo-glass">
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
           <a href="#" className="flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-primary" strokeWidth={1.5} />
@@ -83,19 +83,19 @@ function Home() {
           </nav>
           <div className="flex items-center gap-2">
             <AuthButton />
-            <Button asChild size="sm" className="igloo-spring-btn">
+            <Button asChild size="sm">
               <a href="#commander">Commander</a>
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Hero Section (Photo supprimée et remplacée par la carte interactive 3D Pôle Gabon) */}
+      {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-medium text-primary igloo-float">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-spin-slow" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-medium text-primary">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
               Accompagnement Académique au Gabon · PWA Active
             </span>
             <h1 className="mt-5 font-serif text-4xl leading-tight text-primary sm:text-5xl md:text-6xl">
@@ -107,13 +107,13 @@ function Home() {
               Tarifs transparents en Franc CFA (XAF), paiement Mobile Money (Airtel & Moov).
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="igloo-spring-btn shadow-md">
+              <Button asChild size="lg" className="shadow-md">
                 <a href="#commander">
                   Commander maintenant
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </a>
               </Button>
-              <Button asChild variant="outline" size="lg" className="igloo-spring-btn">
+              <Button asChild variant="outline" size="lg">
                 <a href="#tarifs">Voir les tarifs</a>
               </Button>
             </div>
@@ -130,10 +130,9 @@ function Home() {
             </div>
           </div>
 
-          {/* Carte 3D Interactive Pôle Gabon (Substitut moderne à la photo de stock) */}
+          {/* Carte Pôle Gabon */}
           <div className="relative">
-            <div className="absolute -inset-4 rounded-2xl bg-gradient-to-br from-gold/20 via-transparent to-primary/10 blur-2xl pointer-events-none" />
-            <TiltCard maxTilt={6} className="rounded-2xl border border-border/80 bg-card/90 p-8 shadow-[var(--shadow-elegant)] igloo-glass">
+            <TiltCard className="rounded-2xl border border-border bg-card p-8 shadow-md">
               <div className="flex items-center justify-between border-b border-border/60 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-serif font-bold text-lg shadow-md">
@@ -149,7 +148,7 @@ function Home() {
                   </div>
                 </div>
                 <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 igloo-pulse-dot" />
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
                   Service Actif
                 </span>
               </div>
@@ -226,8 +225,7 @@ function Home() {
             ].map((g) => (
               <TiltCard
                 key={g.title}
-                maxTilt={6}
-                className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] igloo-glass"
+                className="rounded-xl border border-border bg-card p-6 shadow-sm"
               >
                 <div className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <g.icon className="h-5 w-5" />
@@ -255,11 +253,10 @@ function Home() {
             {pricing.map((p) => (
               <TiltCard
                 key={p.title}
-                maxTilt={7}
-                className={`relative rounded-xl border p-6 transition igloo-glass ${
+                className={`relative rounded-xl border p-6 ${
                   p.featured
-                    ? "border-gold bg-card shadow-[var(--shadow-elegant)] ring-1 ring-gold/40"
-                    : "border-border bg-card shadow-[var(--shadow-soft)]"
+                    ? "border-gold bg-card shadow-md ring-1 ring-gold/40"
+                    : "border-border bg-card shadow-sm"
                 }`}
               >
                 {p.featured && (

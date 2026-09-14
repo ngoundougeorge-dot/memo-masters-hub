@@ -266,7 +266,7 @@ export default function OrderForm() {
   // Confirmation screen after submission (Page 2 du PDF)
   if (done) {
     return (
-      <div className="rounded-2xl border border-border/80 bg-card p-8 text-center shadow-lg igloo-glass">
+      <div className="rounded-2xl border border-border/80 bg-card p-8 text-center shadow-lg">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 shadow-inner">
           <CheckCircle2 className="h-9 w-9" />
         </div>
@@ -296,7 +296,7 @@ export default function OrderForm() {
         </div>
 
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Button asChild className="gap-2 igloo-spring-btn">
+          <Button asChild className="gap-2">
             <Link to="/client" search={{ order_id: done.id }}>
               <span>Accéder à mon Espace Client</span>
               <ArrowRight className="h-4 w-4" />
@@ -313,7 +313,7 @@ export default function OrderForm() {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-6 rounded-2xl border border-border/80 bg-card p-6 shadow-md igloo-glass sm:p-8"
+      className="space-y-6 rounded-2xl border border-border/80 bg-card p-6 shadow-md sm:p-8"
     >
       <div className="flex items-center justify-between border-b border-border/60 pb-4">
         <div>
@@ -639,7 +639,7 @@ export default function OrderForm() {
         type="submit"
         size="lg"
         disabled={uploading}
-        className="w-full gap-2 rounded-xl text-sm font-semibold shadow-md igloo-spring-btn"
+        className="w-full gap-2 rounded-xl text-sm font-semibold shadow-md"
       >
         {uploading ? (
           <>

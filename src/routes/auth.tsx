@@ -148,7 +148,7 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md igloo-glass">
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
           <Link to="/" className="flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-primary" strokeWidth={1.5} />
@@ -166,7 +166,7 @@ function AuthPage() {
 
         {/* CAS A : Vérification en cours d'un lien d'e-mail */}
         {verifyingMagicLink ? (
-          <TiltCard maxTilt={4} className="w-full max-w-md rounded-2xl border border-primary/40 bg-card/95 p-8 text-center shadow-2xl igloo-glass">
+          <TiltCard className="w-full max-w-md rounded-2xl border border-primary/40 bg-card p-8 text-center shadow-xl">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
               <Loader2 className="h-7 w-7 animate-spin" />
             </div>
@@ -179,7 +179,7 @@ function AuthPage() {
           </TiltCard>
         ) : user ? (
           /* CAS B : Utilisateur déjà connecté */
-          <TiltCard maxTilt={4} className="w-full max-w-md rounded-2xl border border-border/80 bg-card/95 p-8 shadow-2xl igloo-glass text-center">
+          <TiltCard className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-xl text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
               <UserCheck className="h-7 w-7" />
             </div>
@@ -202,7 +202,7 @@ function AuthPage() {
 
             <div className="mt-6 flex flex-col gap-2.5">
               {role === "admin" && (
-                <Button asChild className="igloo-spring-btn shadow-md">
+                <Button asChild className="shadow-md">
                   <Link to="/admin">
                     Accéder au Panneau d'Administration
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -210,14 +210,14 @@ function AuthPage() {
                 </Button>
               )}
               {role === "redacteur" && (
-                <Button asChild className="igloo-spring-btn shadow-md">
+                <Button asChild className="shadow-md">
                   <Link to="/redacteur">
                     Accéder à l'Espace Rédacteur
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               )}
-              <Button asChild variant="outline" className="igloo-spring-btn">
+              <Button asChild variant="outline">
                 <Link to="/client">
                   Accéder à mon Espace Client
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -226,7 +226,7 @@ function AuthPage() {
               <Button
                 variant="ghost"
                 onClick={() => logout()}
-                className="igloo-spring-btn text-xs text-destructive hover:bg-destructive/10 mt-2"
+                className="text-xs text-destructive hover:bg-destructive/10 mt-2"
               >
                 Se déconnecter
               </Button>
@@ -235,7 +235,7 @@ function AuthPage() {
         ) : (
           /* CAS C : Formulaire d'authentification Firebase (Lien Magique + Mot de passe) */
           <div className="w-full max-w-md">
-            <TiltCard maxTilt={3} className="rounded-2xl border border-border/80 bg-card/95 p-6 shadow-2xl igloo-glass">
+            <TiltCard className="rounded-2xl border border-border bg-card p-6 shadow-xl">
               {/* Header Card */}
               <div className="text-center mb-6">
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
@@ -283,7 +283,7 @@ function AuthPage() {
 
                   <Button
                     variant="outline"
-                    className="w-full text-xs igloo-spring-btn mt-2"
+                    className="w-full text-xs mt-2"
                     onClick={() => {
                       setMagicLinkSent(false);
                       setMagicEmail("");
@@ -326,7 +326,7 @@ function AuthPage() {
 
                       <Button
                         type="submit"
-                        className="w-full h-10 igloo-spring-btn shadow-md"
+                        className="w-full h-10 shadow-md"
                         disabled={pwdLoading}
                       >
                         {pwdLoading ? (
@@ -396,7 +396,7 @@ function AuthPage() {
 
                       <Button
                         type="submit"
-                        className="w-full h-10 igloo-spring-btn shadow-md"
+                        className="w-full h-10 shadow-md"
                         disabled={pwdLoading}
                       >
                         {pwdLoading ? (

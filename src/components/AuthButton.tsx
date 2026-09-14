@@ -31,7 +31,7 @@ export default function AuthButton() {
           {roleBadgeText}
         </Badge>
 
-        <Button asChild size="sm" variant="outline" className="h-8 text-xs igloo-spring-btn">
+        <Button asChild size="sm" variant="outline" className="h-8 text-xs">
           <Link to={portalUrl}>
             {role === "admin" && <ShieldAlert className="mr-1.5 h-3.5 w-3.5 text-amber-500" />}
             {role === "redacteur" && <PenTool className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />}
@@ -45,7 +45,7 @@ export default function AuthButton() {
           variant="ghost"
           onClick={() => logout()}
           title="Se déconnecter"
-          className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 igloo-spring-btn"
+          className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
         >
           <LogOut className="h-3.5 w-3.5" />
         </Button>
@@ -54,7 +54,7 @@ export default function AuthButton() {
   }
 
   return (
-    <Button asChild size="sm" variant="outline" className="h-8 text-xs igloo-spring-btn">
+    <Button asChild size="sm" variant="outline" className="h-8 text-xs">
       <Link to="/auth">
         <LogIn className="mr-1.5 h-3.5 w-3.5 text-primary" />
         Connexion

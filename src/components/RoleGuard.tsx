@@ -25,8 +25,7 @@ export function RoleGuard({
   if (loading) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center p-6 text-center">
-        <div className="relative mb-4 flex items-center justify-center">
-          <div className="absolute h-16 w-16 rounded-full bg-primary/20 blur-xl animate-pulse" />
+        <div className="mb-4 flex items-center justify-center">
           <Loader2 className="h-10 w-10 text-primary animate-spin" />
         </div>
         <p className="text-sm text-muted-foreground font-medium">
@@ -40,7 +39,7 @@ export function RoleGuard({
   if (!user) {
     return (
       <div className="mx-auto flex min-h-[70vh] max-w-xl items-center justify-center px-4 py-12">
-        <TiltCard maxTilt={5} className="w-full rounded-2xl border border-border/80 bg-card/90 p-8 shadow-2xl igloo-glass text-center">
+        <TiltCard className="w-full rounded-2xl border border-border bg-card p-8 shadow-xl text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
             <Lock className="h-7 w-7" />
           </div>
@@ -56,13 +55,13 @@ export function RoleGuard({
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Button asChild size="lg" className="igloo-spring-btn shadow-md">
+            <Button asChild size="lg" className="shadow-md">
               <Link to="/auth">
                 <LogIn className="mr-2 h-4 w-4" />
                 Se connecter
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="igloo-spring-btn">
+            <Button asChild variant="outline" size="lg">
               <Link to="/">Retour à l'accueil</Link>
             </Button>
           </div>
@@ -77,7 +76,7 @@ export function RoleGuard({
   if (!isAuthorized) {
     return (
       <div className="mx-auto flex min-h-[70vh] max-w-xl items-center justify-center px-4 py-12">
-        <TiltCard maxTilt={5} className="w-full rounded-2xl border border-border/80 bg-card/95 p-8 shadow-2xl igloo-glass text-center relative overflow-hidden">
+        <TiltCard className="w-full rounded-2xl border border-border bg-card p-8 shadow-xl text-center relative overflow-hidden">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
             <Shield className="h-7 w-7" />
           </div>
@@ -95,13 +94,13 @@ export function RoleGuard({
           </p>
 
           <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
-            <Button asChild className="igloo-spring-btn shadow-md">
+            <Button asChild className="shadow-md">
               <Link to="/client">
                 <UserCheck className="mr-2 h-4 w-4" />
                 Aller à mon Espace Client
               </Link>
             </Button>
-            <Button variant="outline" onClick={() => logout()} className="igloo-spring-btn">
+            <Button variant="outline" onClick={() => logout()}>
               <LogOut className="mr-2 h-4 w-4" />
               Changer de compte
             </Button>

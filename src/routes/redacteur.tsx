@@ -527,7 +527,7 @@ function WriterDashboard() {
               }`}
             >
               {activeProject.paymentConfirmed ? (
-                <PenTool className="h-4 w-4 mx-auto mb-1 text-amber-600 animate-pulse" />
+                <PenTool className="h-4 w-4 mx-auto mb-1 text-amber-600" />
               ) : (
                 <Clock className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
               )}

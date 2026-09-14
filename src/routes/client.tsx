@@ -194,7 +194,7 @@ function ClientDashboard() {
     >
       <main className="min-h-screen bg-background pb-16">
         {/* Header */}
-        <header className="border-b border-border/70 bg-card/80 backdrop-blur-md igloo-glass sticky top-0 z-40">
+        <header className="border-b border-border/70 bg-card/80 backdrop-blur-md sticky top-0 z-40">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
             <Link to="/" className="flex items-center gap-2">
               <span className="font-serif text-xl font-bold text-primary">MémoirePro</span>
@@ -263,7 +263,7 @@ function ClientDashboard() {
 
         {/* Pas de commande active ? */}
         {!project ? (
-          <div className="mt-10 rounded-2xl border border-border bg-card p-12 text-center shadow-md igloo-glass">
+          <div className="mt-10 rounded-2xl border border-border bg-card p-12 text-center shadow-md">
             <FileText className="mx-auto h-12 w-12 text-muted-foreground/60" />
             <h3 className="mt-4 font-serif text-xl font-bold text-foreground">
               Aucune commande active sélectionnée
@@ -272,7 +272,7 @@ function ClientDashboard() {
               Passez votre première commande pour suivre son avancement en temps réel ou saisissez votre référence.
             </p>
             <div className="mt-6 flex justify-center gap-3">
-              <Button asChild className="igloo-spring-btn">
+              <Button asChild>
                 <Link to="/">Commander un mémoire</Link>
               </Button>
               <Button
@@ -289,7 +289,7 @@ function ClientDashboard() {
         ) : (
           <div className="mt-8 space-y-6">
             {/* 1. Project Overview & Timeline */}
-            <TiltCard className="rounded-2xl border border-border/80 bg-card p-6 shadow-md igloo-glass">
+            <TiltCard className="rounded-2xl border border-border/80 bg-card p-6 shadow-md">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
@@ -347,7 +347,7 @@ function ClientDashboard() {
                             done
                               ? "bg-emerald-500/20 text-emerald-700 border border-emerald-400/40"
                               : active
-                                ? "bg-primary/20 text-primary border border-primary/50 animate-pulse"
+                                ? "bg-primary/20 text-primary border border-primary/50"
                                 : "bg-muted text-muted-foreground border border-border"
                           }`}
                         >
@@ -384,7 +384,7 @@ function ClientDashboard() {
                   <Button
                     size="sm"
                     onClick={handleSimulatePayment}
-                    className="shrink-0 bg-amber-600 text-white hover:bg-amber-700 text-xs igloo-spring-btn"
+                    className="shrink-0 bg-amber-600 text-white hover:bg-amber-700 text-xs"
                   >
                     <CreditCard className="mr-1.5 h-3.5 w-3.5" />
                     Simuler confirmation de paiement
@@ -395,9 +395,9 @@ function ClientDashboard() {
 
             {/* 3. Téléchargement Final (Règle d'or de la Page 3 du PDF) */}
             <div
-              className={`rounded-2xl border p-6 transition-all duration-300 ${
+              className={`rounded-2xl border p-6 ${
                 isCompleted
-                  ? "border-emerald-500/40 bg-emerald-500/10 shadow-lg igloo-glass"
+                  ? "border-emerald-500/40 bg-emerald-500/10 shadow-lg"
                   : "border-border/70 bg-card/60 shadow-sm"
               }`}
             >
@@ -406,7 +406,7 @@ function ClientDashboard() {
                   <div
                     className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
                       isCompleted
-                        ? "bg-emerald-600 text-white shadow-md animate-bounce"
+                        ? "bg-emerald-600 text-white shadow-md"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
@@ -442,7 +442,7 @@ function ClientDashboard() {
                       <Button
                         size="sm"
                         onClick={() => toast.success("Téléchargement du mémoire complet (.docx) lancé !")}
-                        className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold igloo-spring-btn shadow-md"
+                        className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md"
                       >
                         <Download className="h-4 w-4" />
                         <span>Télécharger le Mémoire (.DOCX)</span>
@@ -451,7 +451,7 @@ function ClientDashboard() {
                         size="sm"
                         variant="outline"
                         onClick={() => setShowCertificate(true)}
-                        className="gap-1.5 border-emerald-400/50 text-xs text-emerald-700 dark:text-emerald-300 font-semibold igloo-spring-btn"
+                        className="gap-1.5 border-emerald-400/50 text-xs text-emerald-700 dark:text-emerald-300 font-semibold"
                       >
                         <FileCheck2 className="h-4 w-4 text-emerald-600" />
                         <span>Certificat Anti-Plagiat</span>
@@ -499,7 +499,7 @@ function ClientDashboard() {
 
               {/* ONGLET 1 : JALONS DU MÉMOIRE */}
               <TabsContent value="jalons" className="mt-4 space-y-4">
-                <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm igloo-glass">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <div className="flex items-center justify-between border-b border-border/60 pb-3">
                     <div>
                       <h3 className="font-serif text-lg font-bold text-foreground">
@@ -530,7 +530,7 @@ function ClientDashboard() {
                           className={`flex flex-col gap-3 rounded-xl border p-4 transition-all sm:flex-row sm:items-center sm:justify-between ${
                             !isClickable
                               ? "opacity-50 blur-[0.5px] cursor-not-allowed bg-muted/20 border-border/60"
-                              : "hover:border-primary/50 hover:bg-muted/30 cursor-pointer bg-card border-border/70 igloo-spring-btn"
+                              : "hover:border-primary/50 hover:bg-muted/30 cursor-pointer bg-card border-border/70"
                           }`}
                         >
                           <div className="flex items-start gap-3">
@@ -593,7 +593,7 @@ function ClientDashboard() {
 
               {/* ONGLET 2 : MESSAGERIE INTERNE */}
               <TabsContent value="messagerie" className="mt-4">
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm igloo-glass overflow-hidden">
+                <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
                   <div className="border-b border-border/60 p-4 bg-muted/20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold font-serif text-sm">
@@ -650,7 +650,7 @@ function ClientDashboard() {
                       onChange={(e) => setMessageInput(e.target.value)}
                       className="text-xs sm:text-sm h-10 rounded-xl"
                     />
-                    <Button type="submit" size="sm" className="gap-1.5 rounded-xl h-10 px-4 igloo-spring-btn">
+                    <Button type="submit" size="sm" className="gap-1.5 rounded-xl h-10 px-4">
                       <Send className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Envoyer</span>
                     </Button>
@@ -660,7 +660,7 @@ function ClientDashboard() {
 
               {/* ONGLET 3 : DOCUMENTS COMPLÉMENTAIRES */}
               <TabsContent value="documents" className="mt-4">
-                <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm igloo-glass space-y-5">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5">
                   <div>
                     <h3 className="font-serif text-lg font-bold text-foreground">
                       Transmission de Documents Complémentaires
@@ -677,7 +677,7 @@ function ClientDashboard() {
                       Ajouter de nouveaux documents pour le rédacteur
                     </p>
                     <label className="mt-3 cursor-pointer">
-                      <span className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 igloo-spring-btn">
+                      <span className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90">
                         <Upload className="h-3.5 w-3.5" /> Parcourir les fichiers
                       </span>
                       <input
@@ -721,7 +721,7 @@ function ClientDashboard() {
 
       {/* Modal de Consultation de Jalon (Lecture Seule) */}
       <Dialog open={Boolean(selectedMilestone)} onOpenChange={() => setSelectedMilestone(null)}>
-        <DialogContent className="max-w-lg rounded-2xl p-6 igloo-glass">
+        <DialogContent className="max-w-lg rounded-2xl p-6">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="text-xs">
