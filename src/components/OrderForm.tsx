@@ -88,7 +88,7 @@ export default function OrderForm() {
       has_guidelines: "oui",
       has_plan: "non",
       has_cover_page: "oui",
-      payment_method: "orange_money",
+      payment_method: "airtel_money",
     },
   });
 
@@ -301,21 +301,21 @@ export default function OrderForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="full_name">Nom complet *</Label>
-          <Input id="full_name" {...form.register("full_name")} placeholder="Aïcha Diallo" />
+          <Input id="full_name" {...form.register("full_name")} placeholder="Jean-Pierre Nguema" />
           {form.formState.errors.full_name && (
             <p className="text-xs text-destructive">{form.formState.errors.full_name.message}</p>
           )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">Email *</Label>
-          <Input id="email" type="email" {...form.register("email")} placeholder="aicha.diallo@universite.edu" />
+          <Input id="email" type="email" {...form.register("email")} placeholder="etudiant@uob.ga" />
           {form.formState.errors.email && (
             <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
           )}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="phone">Téléphone / WhatsApp *</Label>
-          <Input id="phone" {...form.register("phone")} placeholder="+221 77 123 45 67" />
+          <Label htmlFor="phone">Téléphone / WhatsApp Gabon *</Label>
+          <Input id="phone" {...form.register("phone")} placeholder="+241 74 00 00 00" />
           {form.formState.errors.phone && (
             <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>
           )}
@@ -325,7 +325,7 @@ export default function OrderForm() {
           <Input
             id="academic_level"
             {...form.register("academic_level")}
-            placeholder="UCAD Dakar — Master 2 Finance"
+            placeholder="Université Omar Bongo (UOB Libreville) — Master 2"
           />
           {form.formState.errors.academic_level && (
             <p className="text-xs text-destructive">{form.formState.errors.academic_level.message}</p>
@@ -379,7 +379,7 @@ export default function OrderForm() {
           id="subject"
           rows={2}
           {...form.register("subject")}
-          placeholder="Ex: Analyse de la rentabilité des investissements dans l'énergie solaire au Sahel : Étude empirique 2020-2025."
+          placeholder="Ex: Stratégies de valorisation de la filière bois et transition écologique au Gabon : Étude de cas sectorielle."
         />
         {form.formState.errors.subject && (
           <p className="text-xs text-destructive">{form.formState.errors.subject.message}</p>
@@ -524,20 +524,19 @@ export default function OrderForm() {
 
       {/* 6. Mode de paiement */}
       <div className="space-y-2">
-        <Label>Mode de paiement préféré *</Label>
+        <Label>Mode de paiement préféré (Gabon) *</Label>
         <Select
-          defaultValue="orange_money"
+          defaultValue="airtel_money"
           onValueChange={(v) => form.setValue("payment_method", v)}
         >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="orange_money">Orange Money (Sénégal, CI, Mali, Burkina)</SelectItem>
-            <SelectItem value="wave">Wave (Sénégal, Côte d'Ivoire)</SelectItem>
-            <SelectItem value="mtn_momo">MTN Mobile Money (Bénin, CI, Cameroun)</SelectItem>
-            <SelectItem value="moov_money">Moov Money (Togo, CI, Gabon)</SelectItem>
+            <SelectItem value="airtel_money">Airtel Money Gabon (Paiement instantané)</SelectItem>
+            <SelectItem value="moov_money">Moov Money (Moov Africa Gabon Telecom)</SelectItem>
             <SelectItem value="carte_bancaire">Carte bancaire (Visa / Mastercard)</SelectItem>
+            <SelectItem value="virement_bgfi">Virement bancaire (BGFI Bank, UBA Gabon)</SelectItem>
           </SelectContent>
         </Select>
       </div>

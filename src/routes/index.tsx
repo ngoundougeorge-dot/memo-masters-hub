@@ -2,17 +2,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BookOpen,
   ShieldCheck,
-  Quote,
   FileCheck2,
   Sparkles,
-  Star,
   Phone,
   Mail,
   ChevronRight,
   ShieldAlert,
+  CheckCircle2,
+  MapPin,
+  GraduationCap,
+  CreditCard,
+  Lock,
 } from "lucide-react";
 
-import heroImg from "@/assets/hero-thesis.jpg";
 import { Button } from "@/components/ui/button";
 import { TiltCard } from "@/components/TiltCard";
 import AuthButton from "@/components/AuthButton";
@@ -33,41 +35,20 @@ const pricing = [
     title: "Mémoire de licence",
     price: "75 000",
     unit: "à partir de",
-    features: ["40–60 pages", "Bibliographie APA/Harvard", "Livré sous 14 jours", "2 révisions"],
+    features: ["40–60 pages", "Normes APA / CAMES", "Livré sous 14 jours", "2 révisions"],
     featured: true,
   },
   {
     title: "Mémoire de master",
     price: "150 000",
     unit: "à partir de",
-    features: ["60–100 pages", "Méthodologie & analyse", "Livré sous 21 jours", "3 révisions"],
+    features: ["60–100 pages", "Méthodologie & analyse empirique", "Livré sous 21 jours", "3 révisions"],
   },
   {
-    title: "Correction & relecture",
+    title: "Thèse & Correction approfondie",
     price: "15 000",
     unit: "à partir de",
-    features: ["Orthographe & style", "Cohérence du plan", "Livré sous 5 jours", "Rapport détaillé"],
-  },
-];
-
-const testimonials = [
-  {
-    name: "Aminata K.",
-    school: "Université Cheikh Anta Diop, Dakar",
-    grade: "17/20",
-    text: "J'ai eu la mention Très Bien pour mon mémoire de master. Le rédacteur a parfaitement respecté les consignes de mon directeur, avec des sources solides.",
-  },
-  {
-    name: "Jean-Pierre O.",
-    school: "Université Félix Houphouët-Boigny, Abidjan",
-    grade: "16/20",
-    text: "Rapport de stage livré à temps, structure impeccable. Mon maître de stage a été très satisfait de la qualité rédactionnelle.",
-  },
-  {
-    name: "Fatoumata D.",
-    school: "Université de Ouagadougou",
-    grade: "15/20",
-    text: "Zéro plagiat détecté, tout est cité correctement. La messagerie m'a permis de suivre l'avancement de A à Z. Je recommande vivement.",
+    features: ["Orthographe & style académique", "Cohérence du plan", "Livré sous 5 jours", "Rapport détaillé"],
   },
 ];
 
@@ -79,12 +60,11 @@ function Home() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
           <a href="#" className="flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-primary" strokeWidth={1.5} />
-            <span className="font-serif text-xl font-semibold text-primary">MémoirePro</span>
+            <span className="font-serif text-xl font-bold text-primary">MémoirePro Gabon</span>
           </a>
           <nav className="hidden gap-6 text-sm text-muted-foreground md:flex">
             <a href="#tarifs" className="hover:text-foreground transition-colors">Tarifs</a>
             <a href="#garanties" className="hover:text-foreground transition-colors">Garanties</a>
-            <a href="#avis" className="hover:text-foreground transition-colors">Avis</a>
             <Link to="/client" className="hover:text-foreground transition-colors">Espace Client</Link>
             <Link to="/redacteur" className="hover:text-foreground transition-colors">Espace Rédacteur</Link>
             <Link to="/admin" className="inline-flex items-center gap-1 text-primary font-medium hover:underline">
@@ -101,21 +81,21 @@ function Home() {
         </div>
       </header>
 
-      {/* Hero */}
+      {/* Hero Section (Photo supprimée et remplacée par la carte interactive 3D Pôle Gabon) */}
       <section className="relative overflow-hidden">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-medium text-primary igloo-float">
               <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-spin-slow" />
-              Rédaction académique certifiée · PWA Active
+              Accompagnement Académique au Gabon · PWA Active
             </span>
             <h1 className="mt-5 font-serif text-4xl leading-tight text-primary sm:text-5xl md:text-6xl">
-              Votre mémoire, rédigé avec la rigueur qu'il mérite.
+              Votre mémoire au Gabon, rédigé avec rigueur et sans plagiat.
             </h1>
             <p className="mt-5 max-w-lg text-lg text-muted-foreground">
-              Un service de rédaction personnalisée pour vos mémoires de licence, master et
-              rapports de stage. Sources correctement citées, garantie anti-plagiat, tarifs
-              transparents en Franc CFA.
+              Service personnalisé pour vos mémoires de licence, master, thèses et rapports de stage
+              conformes aux exigences des universités et instituts gabonais (UOB, USTM, INSG, USS).
+              Tarifs transparents en Franc CFA (XAF), paiement Mobile Money (Airtel & Moov).
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" className="igloo-spring-btn shadow-md">
@@ -128,25 +108,82 @@ function Home() {
                 <a href="#tarifs">Voir les tarifs</a>
               </Button>
             </div>
-            <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1 text-gold">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-current" />
-                ))}
-              </div>
-              <span>+ de 250 étudiants satisfaits</span>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3 text-xs font-medium text-muted-foreground">
+              <span className="flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 px-3 py-1.5 text-foreground">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Garantie Anti-plagiat Turnitin certifiée
+              </span>
+              <span className="flex items-center gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-foreground">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                Paiement Airtel Money & Moov Money
+              </span>
             </div>
           </div>
+
+          {/* Carte 3D Interactive Pôle Gabon (Substitut moderne à la photo de stock) */}
           <div className="relative">
             <div className="absolute -inset-4 rounded-2xl bg-gradient-to-br from-gold/20 via-transparent to-primary/10 blur-2xl pointer-events-none" />
-            <TiltCard maxTilt={8} className="rounded-2xl overflow-hidden shadow-[var(--shadow-elegant)]">
-              <img
-                src={heroImg}
-                alt="Mémoire académique relié"
-                width={1600}
-                height={1200}
-                className="w-full h-auto object-cover rounded-2xl"
-              />
+            <TiltCard maxTilt={6} className="rounded-2xl border border-border/80 bg-card/90 p-8 shadow-[var(--shadow-elegant)] igloo-glass">
+              <div className="flex items-center justify-between border-b border-border/60 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-serif font-bold text-lg shadow-md">
+                    GA
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg font-bold text-foreground">
+                      Pôle Académique Gabon
+                    </h3>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-primary" /> Libreville · Port-Gentil · Franceville
+                    </p>
+                  </div>
+                </div>
+                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 igloo-pulse-dot" />
+                  Service Actif
+                </span>
+              </div>
+
+              <div className="mt-6 space-y-4 text-xs">
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-1">
+                  <span className="font-bold text-foreground text-sm block flex items-center gap-1.5">
+                    <GraduationCap className="h-4 w-4 text-primary" />
+                    Établissements d'Enseignement Supérieur
+                  </span>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Université Omar Bongo (UOB), USTM Masuku, INSG, USS, IST et instituts supérieurs de Libreville.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-1">
+                    <span className="font-bold text-primary block flex items-center gap-1">
+                      <CreditCard className="h-3.5 w-3.5" /> Paiement Gabon
+                    </span>
+                    <p className="text-muted-foreground text-[11px]">
+                      Airtel Money Gabon, Moov Money Gabon Telecom & Virement BGFI
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 space-y-1">
+                    <span className="font-bold text-emerald-700 block flex items-center gap-1">
+                      <Lock className="h-3.5 w-3.5" /> Confidentialité
+                    </span>
+                    <p className="text-muted-foreground text-[11px]">
+                      Protection absolue des données et anonymat garanti
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-border/60 text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <FileCheck2 className="h-4 w-4 text-primary" />
+                    Normes CAMES & APA 7e respectées
+                  </span>
+                  <span className="font-semibold text-primary">Tarifs en FCFA (XAF)</span>
+                </div>
+              </div>
             </TiltCard>
           </div>
         </div>
@@ -165,17 +202,17 @@ function Home() {
               {
                 icon: Sparkles,
                 title: "Rédaction 100% personnalisée",
-                text: "Chaque mémoire est rédigé sur mesure, en respectant scrupuleusement les consignes de votre établissement et le style de votre directeur de recherche.",
+                text: "Chaque mémoire est rédigé sur mesure, en respectant scrupuleusement les consignes de votre établissement gabonais et le style de votre directeur de recherche.",
               },
               {
                 icon: FileCheck2,
                 title: "Sources citées avec rigueur",
-                text: "Toutes nos sources sont référencées en APA, Harvard ou selon la norme demandée. Bibliographie complète et vérifiable fournie systématiquement.",
+                text: "Toutes les sources sont référencées selon les normes académiques (APA, Harvard, CAMES). Bibliographie complète, vérifiable et fournie systématiquement.",
               },
               {
                 icon: ShieldCheck,
-                title: "Garantie anti-plagiat",
-                text: "Chaque document passe un contrôle Turnitin avant livraison. Rapport de similarité fourni. En cas de détection, remboursement intégral.",
+                title: "Garantie anti-plagiat absolue",
+                text: "Chaque document passe un contrôle certifié Turnitin avant livraison. Rapport de similarité fourni. En cas de non-conformité, remboursement intégral.",
               },
             ].map((g) => (
               <TiltCard
@@ -199,10 +236,10 @@ function Home() {
         <div className="mx-auto max-w-6xl px-4">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-serif text-3xl text-primary sm:text-4xl">
-              Tarifs clairs, en Franc CFA
+              Tarifs clairs, en Franc CFA (XAF)
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Devis final ajusté selon la longueur, la complexité et le délai. Aucun frais caché.
+              Devis final ajusté selon le nombre de pages, la complexité et le délai. Aucun frais caché.
             </p>
           </div>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -243,125 +280,69 @@ function Home() {
         </div>
       </section>
 
-      {/* Avis */}
-      <section id="avis" className="border-y border-border/60 bg-secondary/40 py-16 md:py-24">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="mx-auto max-w-2xl text-center">
+      {/* Commander (Section épurée, centrée, conforme pour le Gabon) */}
+      <section id="commander" className="py-16 md:py-24 border-t border-border/60">
+        <div className="mx-auto max-w-4xl px-4">
+          <div className="mx-auto max-w-2xl text-center mb-10">
+            <span className="inline-block text-xs font-bold uppercase tracking-wider text-primary mb-2">
+              Formulaire officiel
+            </span>
             <h2 className="font-serif text-3xl text-primary sm:text-4xl">
-              Ils ont obtenu leur diplôme avec mention
+              Passez votre commande de rédaction au Gabon
             </h2>
-          </div>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {testimonials.map((t) => (
-              <TiltCard
-                key={t.name}
-                maxTilt={6}
-                className="flex flex-col rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] igloo-glass"
-              >
-                <Quote className="h-6 w-6 text-gold" />
-                <blockquote className="mt-3 flex-1 text-sm leading-relaxed text-foreground">
-                  « {t.text} »
-                </blockquote>
-                <figcaption className="mt-4 border-t border-border pt-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-foreground">{t.name}</div>
-                      <div className="text-xs text-muted-foreground">{t.school}</div>
-                    </div>
-                    <span className="rounded-md bg-primary/10 px-2 py-1 font-serif text-sm font-semibold text-primary">
-                      {t.grade}
-                    </span>
-                  </div>
-                </figcaption>
-              </TiltCard>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Commander */}
-      <section id="commander" className="py-16 md:py-24">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 lg:grid-cols-[1fr_1.3fr]">
-          <div>
-            <h2 className="font-serif text-3xl text-primary sm:text-4xl">
-              Passez votre commande en 3 minutes
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Décrivez votre sujet, joignez les consignes de votre établissement, choisissez votre
-              mode de paiement Mobile Money. Nous vous contactons sous 24h.
+            <p className="mt-3 text-sm text-muted-foreground">
+              Renseignez les critères de votre travail académique, joignez vos consignes et obtenez
+              votre devis instantané en FCFA. Règlement sécurisé via Airtel Money ou Moov Money.
             </p>
-            <ol className="mt-8 space-y-4">
-              {[
-                "Remplissez le formulaire et joignez vos documents.",
-                "Recevez le devis final et les instructions de paiement par WhatsApp.",
-                "Le rédacteur démarre dès réception du paiement.",
-                "Livraison + rapport anti-plagiat à la date convenue.",
-              ].map((step, i) => (
-                <li key={i} className="flex gap-3">
-                  <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary font-serif text-sm font-semibold text-primary-foreground">
-                    {i + 1}
-                  </span>
-                  <span className="text-sm text-foreground">{step}</span>
-                </li>
-              ))}
-            </ol>
-            <div className="mt-8 flex flex-wrap gap-3">
-              {["Orange Money", "MTN MoMo", "Wave", "Moov Money"].map((m) => (
-                <span
-                  key={m}
-                  className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground"
-                >
-                  {m}
-                </span>
-              ))}
-            </div>
           </div>
+
           <OrderForm />
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Footer (Localisé au Gabon) */}
       <footer className="border-t border-border bg-primary py-12 text-primary-foreground">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 md:grid-cols-3">
           <div>
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
-              <span className="font-serif text-lg font-semibold">MémoirePro</span>
+              <span className="font-serif text-lg font-semibold">MémoirePro Gabon</span>
             </div>
             <p className="mt-3 text-sm opacity-80">
-              Rédaction académique personnalisée pour étudiants d'Afrique francophone.
+              Service professionnel d'accompagnement académique et de rédaction pour étudiants et chercheurs au Gabon.
+            </p>
+            <p className="mt-2 text-xs opacity-70">
+              Libreville · Port-Gentil · Franceville
             </p>
           </div>
           <div>
             <h4 className="font-serif text-sm font-semibold uppercase tracking-wider opacity-90">
-              Contact
+              Contact & Assistance Gabon
             </h4>
             <ul className="mt-3 space-y-2 text-sm opacity-80">
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
-                <span>WhatsApp :</span>
-                <a href="tel:+2250700000000" className="hover:underline">
-                  +225 07 00 00 00 00
+                <span>WhatsApp Gabon :</span>
+                <a href="tel:+24174000000" className="hover:underline font-mono">
+                  +241 74 00 00 00
                 </a>
               </li>
-
               <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4" /> contact@memoirepro.africa
+                <Mail className="h-4 w-4" /> contact@memoirepro.ga
               </li>
             </ul>
           </div>
           <div>
             <h4 className="font-serif text-sm font-semibold uppercase tracking-wider opacity-90">
-              Confidentialité
+              Confidentialité & Rigueur
             </h4>
             <p className="mt-3 text-sm opacity-80">
-              Vos documents et informations restent strictement confidentiels et ne sont jamais
-              partagés.
+              Vos documents, thèmes et données personnelles restent strictement confidentiels et ne sont jamais divulgués.
             </p>
           </div>
         </div>
         <div className="mx-auto mt-10 max-w-6xl border-t border-primary-foreground/20 px-4 pt-6 text-center text-xs opacity-70">
-          © 2026 MémoirePro. Tous droits réservés.
+          © 2026 MémoirePro Gabon. Tous droits réservés.
         </div>
       </footer>
     </div>

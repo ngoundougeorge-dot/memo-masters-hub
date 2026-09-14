@@ -103,7 +103,7 @@ export function getDefaultMessages(orderId: string): ProjectMessage[] {
       id: `msg-${orderId}-1`,
       orderId,
       sender: "redacteur",
-      senderName: "Dr. Ibrahima Sow (Rédacteur)",
+      senderName: "Dr. Stéphane Ondo (Rédacteur)",
       content:
         "Bonjour ! J'ai bien pris en compte votre sujet et vos consignes. Le plan détaillé a été finalisé et est disponible dans l'onglet Jalons pour votre consultation.",
       createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),

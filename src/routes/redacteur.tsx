@@ -78,10 +78,10 @@ const INITIAL_WRITER_ORDERS: ProjectDetails[] = [
   {
     id: "PRJ-2026-8A3F",
     orderId: "ord-demo-01",
-    subject: "L'impact du mobile money sur l'inclusion financière des PME en Afrique de l'Ouest",
+    subject: "L'impact du mobile money (Airtel & Moov) sur l'inclusion financière des PME au Gabon",
     documentType: "memoire_master",
-    academicLevel: "Université Cheikh Anta Diop (UCAD) — Master 2 Finance",
-    objective: "Rédaction complète d'un mémoire de 70 pages avec cadrage théorique, démarche empirique et recommandations managériales.",
+    academicLevel: "Université Omar Bongo (UOB Libreville) — Master 2 Finance & Banque",
+    objective: "Rédaction complète d'un mémoire de 70 pages avec cadrage théorique, démarche empirique et recommandations adaptées au tissu économique gabonais.",
     means: "Revue de littérature Cairn/JSTOR, Rédacteur Senior, Assistant IA académique et analyse statistique.",
     deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString(),
     priceFcfa: 150000,
@@ -89,28 +89,28 @@ const INITIAL_WRITER_ORDERS: ProjectDetails[] = [
     isCompleted: false,
     finalReportReady: false,
     hasPlan: true,
-    planText: "Partie 1 : Cadre théorique et revue documentaire. Partie 2 : Étude de cas sur 50 PME sénégalaises.",
+    planText: "Partie 1 : Cadre théorique et revue documentaire. Partie 2 : Étude de cas sur 50 PME gabonaises (Libreville & Port-Gentil).",
     hasGuidelines: true,
     guidelinesText: "Normes APA 7e édition, Times New Roman 12, interligne 1.5.",
     hasCoverPage: true,
-    coverPageText: "Logo UCAD, Faculté des Sciences Économiques, Sous la direction du Pr. Ndiaye.",
+    coverPageText: "Logo UOB, Faculté de Droit et des Sciences Économiques (FDSE Libreville), Sous la direction du Pr. Nguema.",
     milestones: [
       {
         id: "ms-1",
         orderId: "ord-demo-01",
         stepNumber: 1,
         title: "Jalon 1 : Cadrage, Problématique & Plan détaillé",
-        contentPreview: "Problématique validée : Dans quelle mesure les solutions de paiement mobile favorisent-elles la résilience financière des PME informelles ?",
+        contentPreview: "Problématique validée : Dans quelle mesure les solutions de paiement mobile favorisent-elles la résilience financière des PME informelles au Gabon ?",
         status: "valide",
         submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
-        writerNotes: "Plan aligné sur les exigences de l'UCAD.",
+        writerNotes: "Plan aligné sur les exigences académiques de l'UOB et les normes CAMES.",
       },
       {
         id: "ms-2",
         orderId: "ord-demo-01",
         stepNumber: 2,
         title: "Jalon 2 : Revue de Littérature & Cadre Conceptuel",
-        contentPreview: "Analyse comparée des théories de l'intermédiation bancaire et de l'inclusion financière numérique (Banque Mondiale, BCEAO).",
+        contentPreview: "Analyse comparée des théories de l'intermédiation financière et de l'inclusion numérique en zone CEMAC (BEAC, COBAC).",
         status: "soumis",
         submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
         writerNotes: "Prêt pour consultation par l'étudiant.",
@@ -120,7 +120,7 @@ const INITIAL_WRITER_ORDERS: ProjectDetails[] = [
         orderId: "ord-demo-01",
         stepNumber: 3,
         title: "Jalon 3 : Analyse des Données & Résultats Empiriques",
-        contentPreview: "Traitement des questionnaires et analyse économétrique de l'accès au crédit court terme.",
+        contentPreview: "Traitement des questionnaires et analyse économétrique de l'accès au crédit court terme à Libreville.",
         status: "en_cours",
         writerNotes: "En cours de finalisation.",
       },
@@ -129,7 +129,7 @@ const INITIAL_WRITER_ORDERS: ProjectDetails[] = [
         orderId: "ord-demo-01",
         stepNumber: 4,
         title: "Jalon 4 : Conclusion Générale & Recommandations",
-        contentPreview: "Synthèse des apports, limites méthodologiques et pistes de recherche.",
+        contentPreview: "Synthèse des apports, limites méthodologiques et recommandations pour les régulateurs gabonais.",
         status: "en_attente",
       },
     ],
@@ -138,16 +138,16 @@ const INITIAL_WRITER_ORDERS: ProjectDetails[] = [
         id: "m-1",
         orderId: "ord-demo-01",
         sender: "client",
-        senderName: "Aïcha Diallo (Étudiante)",
-        content: "Bonjour Dr. Sow, j'ai bien consulté le Jalon 1. Le plan me convient parfaitement, mon directeur a validé les deux axes !",
+        senderName: "Grace Mba (Étudiante UOB)",
+        content: "Bonjour Dr. Ondo, j'ai bien consulté le Jalon 1. Le plan me convient parfaitement, mon encadreur à l'UOB a validé les deux axes !",
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
       },
       {
         id: "m-2",
         orderId: "ord-demo-01",
         sender: "redacteur",
-        senderName: "Dr. Ibrahima Sow (Rédacteur)",
-        content: "Excellente nouvelle Aïcha ! Je viens de déposer le Jalon 2 (revue de littérature) dans votre espace pour consultation.",
+        senderName: "Dr. Stéphane Ondo (Rédacteur)",
+        content: "Excellente nouvelle Grace ! Je viens de déposer le Jalon 2 (revue de littérature) dans votre espace pour consultation.",
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
       },
     ],
@@ -155,11 +155,11 @@ const INITIAL_WRITER_ORDERS: ProjectDetails[] = [
   {
     id: "PRJ-2026-3B9C",
     orderId: "ord-demo-02",
-    subject: "Audit de la conformité RSE des entreprises agroalimentaires en Côte d'Ivoire",
+    subject: "Audit de la conformité RSE des entreprises de transformation du bois au Gabon",
     documentType: "rapport_stage",
-    academicLevel: "INP-HB Yamoussoukro — Master 1 Management",
-    objective: "Rapport de stage de 45 pages évaluant l'impact environnemental et social des coopératives cacaoyères.",
-    means: "Guides RSE ISO 26000, Rapports sectoriels, Outil IA et Rédacteur Senior.",
+    academicLevel: "Institut National des Sciences de Gestion (INSG Libreville) — Master 1 Management",
+    objective: "Rapport de stage de 45 pages évaluant l'impact environnemental et sociétal des exploitants de la zone économique de Nkok.",
+    means: "Guides RSE ISO 26000, Rapports sectoriels Gabon, Assistant IA et Rédacteur Senior.",
     deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
     priceFcfa: 40000,
     paymentConfirmed: false,
@@ -174,7 +174,7 @@ const INITIAL_WRITER_ORDERS: ProjectDetails[] = [
         orderId: "ord-demo-02",
         stepNumber: 1,
         title: "Jalon 1 : Présentation de l'entreprise & Diagnostic RSE",
-        contentPreview: "Présentation des activités, cartographie des parties prenantes et grille d'évaluation.",
+        contentPreview: "Présentation des activités, cartographie des parties prenantes et grille d'évaluation sectorielle Gabon.",
         status: "en_attente",
       },
     ],
@@ -269,7 +269,7 @@ function WriterDashboard() {
     const updated = addProjectMessage(
       activeProject.orderId,
       "redacteur",
-      "Dr. Ibrahima Sow (Rédacteur)",
+      "Dr. Stéphane Ondo (Rédacteur)",
       chatMessage.trim()
     );
 
@@ -349,7 +349,7 @@ Version Source reformulée selon les standards académiques universitaires :
       } else {
         result = `BIBLIOGRAPHIE NORMALISÉE APA 7e ÉDITION :
 - Banque Mondiale. (2024). Rapport sur l'inclusion économique et financière en Afrique subsaharienne. Washington, DC.
-- Diallo, M., & Sow, I. (2023). Transformation numérique et performance des PME : une perspective ouest-africaine. Revue Africaine de Management, 18(2), 45-68.
+- Nguema, J.-P., & Ondo, S. (2023). Transformation numérique et inclusion financière en Afrique Centrale : dynamiques et perspectives au Gabon. Revue Gabonaise d'Économie et de Gestion, 14(2), 45-68.
 - Porter, M. E. (2020). L'avantage concurrentiel à l'ère des plateformes numériques. De Boeck Supérieur.
 - Williamson, O. E. (1985). The Economic Institutions of Capitalism. Free Press.`;
       }

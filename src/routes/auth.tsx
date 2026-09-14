@@ -117,7 +117,7 @@ function AuthPage() {
                         id="fullName"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Awa Ndiaye"
+                        placeholder="Jean-Pierre Nguema"
                         required
                       />
                     </div>

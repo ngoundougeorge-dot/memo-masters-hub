@@ -577,7 +577,7 @@ function ClientDashboard() {
                       </div>
                       <div>
                         <h4 className="font-serif text-sm font-bold text-foreground">
-                          Dr. Ibrahima Sow · Rédacteur Académique
+                          Dr. Stéphane Ondo · Rédacteur Académique
                         </h4>
                         <span className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />

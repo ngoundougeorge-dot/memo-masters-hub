@@ -81,21 +81,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "MémoirePro — Rédaction de mémoires et rapports de stage" },
+      { title: "MémoirePro Gabon — Rédaction de mémoires et rapports à Libreville" },
       {
         name: "description",
         content:
-          "Service de rédaction personnalisée de mémoires (licence, master) et rapports de stage. Sources correctement citées, garantie anti-plagiat, tarifs en Franc CFA, paiement Mobile Money.",
+          "Service de rédaction personnalisée de mémoires (licence, master) et rapports de stage au Gabon (UOB, USTM, INSG). Sources rigoureusement citées, garantie anti-plagiat, tarifs en Franc CFA (XAF), paiement Airtel Money et Moov Money.",
       },
       { name: "theme-color", content: "#07090E" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "author", content: "MémoirePro" },
-      { property: "og:title", content: "MémoirePro — Rédaction de mémoires et rapports de stage" },
+      { name: "author", content: "MémoirePro Gabon" },
+      { property: "og:title", content: "MémoirePro Gabon — Rédaction de mémoires et rapports à Libreville" },
       {
         property: "og:description",
         content:
-          "Rédaction académique personnalisée, sans plagiat. Tarifs en FCFA, paiement Orange Money, MTN, Wave.",
+          "Rédaction académique personnalisée au Gabon, sans plagiat. Tarifs en FCFA, paiement Airtel Money et Moov Money.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
