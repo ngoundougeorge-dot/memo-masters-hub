@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BookOpen,
   ShieldCheck,
@@ -9,10 +9,12 @@ import {
   Phone,
   Mail,
   ChevronRight,
+  ShieldAlert,
 } from "lucide-react";
 
 import heroImg from "@/assets/hero-thesis.jpg";
 import { Button } from "@/components/ui/button";
+import { TiltCard } from "@/components/TiltCard";
 import AuthButton from "@/components/AuthButton";
 import OrderForm from "@/components/OrderForm";
 
@@ -73,21 +75,26 @@ function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md igloo-glass">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
           <a href="#" className="flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-primary" strokeWidth={1.5} />
             <span className="font-serif text-xl font-semibold text-primary">MémoirePro</span>
           </a>
-          <nav className="hidden gap-8 text-sm text-muted-foreground md:flex">
-            <a href="#tarifs" className="hover:text-foreground">Tarifs</a>
-            <a href="#garanties" className="hover:text-foreground">Garanties</a>
-            <a href="#avis" className="hover:text-foreground">Avis</a>
-            <a href="#commander" className="hover:text-foreground">Commander</a>
+          <nav className="hidden gap-6 text-sm text-muted-foreground md:flex">
+            <a href="#tarifs" className="hover:text-foreground transition-colors">Tarifs</a>
+            <a href="#garanties" className="hover:text-foreground transition-colors">Garanties</a>
+            <a href="#avis" className="hover:text-foreground transition-colors">Avis</a>
+            <Link to="/client" className="hover:text-foreground transition-colors">Espace Client</Link>
+            <Link to="/redacteur" className="hover:text-foreground transition-colors">Espace Rédacteur</Link>
+            <Link to="/admin" className="inline-flex items-center gap-1 text-primary font-medium hover:underline">
+              <ShieldAlert className="h-3.5 w-3.5" />
+              Admin
+            </Link>
           </nav>
           <div className="flex items-center gap-2">
             <AuthButton />
-            <Button asChild size="sm">
+            <Button asChild size="sm" className="igloo-spring-btn">
               <a href="#commander">Commander</a>
             </Button>
           </div>
@@ -98,9 +105,9 @@ function Home() {
       <section className="relative overflow-hidden">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-medium text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-              Rédaction académique certifiée
+            <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-medium text-primary igloo-float">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-spin-slow" />
+              Rédaction académique certifiée · PWA Active
             </span>
             <h1 className="mt-5 font-serif text-4xl leading-tight text-primary sm:text-5xl md:text-6xl">
               Votre mémoire, rédigé avec la rigueur qu'il mérite.
@@ -111,13 +118,13 @@ function Home() {
               transparents en Franc CFA.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg">
+              <Button asChild size="lg" className="igloo-spring-btn shadow-md">
                 <a href="#commander">
                   Commander maintenant
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </a>
               </Button>
-              <Button asChild variant="outline" size="lg">
+              <Button asChild variant="outline" size="lg" className="igloo-spring-btn">
                 <a href="#tarifs">Voir les tarifs</a>
               </Button>
             </div>
@@ -131,14 +138,16 @@ function Home() {
             </div>
           </div>
           <div className="relative">
-            <div className="absolute -inset-4 rounded-2xl bg-gradient-to-br from-gold/20 via-transparent to-primary/10 blur-2xl" />
-            <img
-              src={heroImg}
-              alt="Mémoire académique relié"
-              width={1600}
-              height={1200}
-              className="relative rounded-2xl shadow-[var(--shadow-elegant)]"
-            />
+            <div className="absolute -inset-4 rounded-2xl bg-gradient-to-br from-gold/20 via-transparent to-primary/10 blur-2xl pointer-events-none" />
+            <TiltCard maxTilt={8} className="rounded-2xl overflow-hidden shadow-[var(--shadow-elegant)]">
+              <img
+                src={heroImg}
+                alt="Mémoire académique relié"
+                width={1600}
+                height={1200}
+                className="w-full h-auto object-cover rounded-2xl"
+              />
+            </TiltCard>
           </div>
         </div>
       </section>
@@ -169,16 +178,17 @@ function Home() {
                 text: "Chaque document passe un contrôle Turnitin avant livraison. Rapport de similarité fourni. En cas de détection, remboursement intégral.",
               },
             ].map((g) => (
-              <div
+              <TiltCard
                 key={g.title}
-                className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]"
+                maxTilt={6}
+                className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] igloo-glass"
               >
                 <div className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <g.icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 font-serif text-xl text-foreground">{g.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{g.text}</p>
-              </div>
+              </TiltCard>
             ))}
           </div>
         </div>
@@ -197,16 +207,17 @@ function Home() {
           </div>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {pricing.map((p) => (
-              <div
+              <TiltCard
                 key={p.title}
-                className={`relative rounded-xl border p-6 transition ${
+                maxTilt={7}
+                className={`relative rounded-xl border p-6 transition igloo-glass ${
                   p.featured
-                    ? "border-gold bg-card shadow-[var(--shadow-elegant)]"
+                    ? "border-gold bg-card shadow-[var(--shadow-elegant)] ring-1 ring-gold/40"
                     : "border-border bg-card shadow-[var(--shadow-soft)]"
                 }`}
               >
                 {p.featured && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gold px-3 py-1 text-xs font-semibold text-gold-foreground">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gold px-3 py-1 text-xs font-semibold text-gold-foreground shadow-sm">
                     Le plus demandé
                   </span>
                 )}
@@ -226,7 +237,7 @@ function Home() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </TiltCard>
             ))}
           </div>
         </div>
@@ -242,9 +253,10 @@ function Home() {
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {testimonials.map((t) => (
-              <figure
+              <TiltCard
                 key={t.name}
-                className="flex flex-col rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]"
+                maxTilt={6}
+                className="flex flex-col rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] igloo-glass"
               >
                 <Quote className="h-6 w-6 text-gold" />
                 <blockquote className="mt-3 flex-1 text-sm leading-relaxed text-foreground">
@@ -261,7 +273,7 @@ function Home() {
                     </span>
                   </div>
                 </figcaption>
-              </figure>
+              </TiltCard>
             ))}
           </div>
         </div>

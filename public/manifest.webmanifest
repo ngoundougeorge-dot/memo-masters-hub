@@ -1,0 +1,38 @@
+{
+  "name": "MémoirePro — MemoMasters Hub PWA",
+  "short_name": "MémoirePro",
+  "description": "Service d'accompagnement académique et rédaction de mémoires et rapports de stage.",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07090E",
+  "theme_color": "#07090E",
+  "lang": "fr",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Administration",
+      "url": "/admin",
+      "description": "Gestion des utilisateurs et rôles"
+    },
+    {
+      "name": "Espace Client",
+      "url": "/client",
+      "description": "Suivi des commandes et rédactions"
+    },
+    {
+      "name": "Espace Rédacteur",
+      "url": "/redacteur",
+      "description": "Tableau de bord de rédaction"
+    }
+  ]
+}

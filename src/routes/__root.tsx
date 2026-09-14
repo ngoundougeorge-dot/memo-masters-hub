@@ -73,17 +73,23 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+import { PwaInstallPrompt } from "../components/PwaInstallPrompt";
+import { AuroraBackground } from "../components/AuroraBackground";
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "MémoirePro — Rédaction de mémoires et rapports de stage" },
       {
         name: "description",
         content:
           "Service de rédaction personnalisée de mémoires (licence, master) et rapports de stage. Sources correctement citées, garantie anti-plagiat, tarifs en Franc CFA, paiement Mobile Money.",
       },
+      { name: "theme-color", content: "#07090E" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "author", content: "MémoirePro" },
       { property: "og:title", content: "MémoirePro — Rédaction de mémoires et rapports de stage" },
       {
@@ -97,6 +103,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -127,9 +134,28 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    // Service Worker registration for PWA
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((reg) => {
+            console.log("[PWA] Service Worker registered with scope:", reg.scope);
+          })
+          .catch((err) => {
+            console.warn("[PWA] Service Worker registration failed:", err);
+          });
+      });
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
+      <AuroraBackground />
       <Outlet />
+      <PwaInstallPrompt />
       <Toaster position="top-center" richColors />
     </QueryClientProvider>
   );
