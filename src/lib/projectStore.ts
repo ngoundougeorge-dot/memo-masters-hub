@@ -27,6 +27,7 @@ export type ProjectMessage = {
 export type ProjectDetails = {
   id: string; // ex: PRJ-2026-8A3F
   orderId: string;
+  userId?: string;
   clientName?: string;
   clientEmail?: string;
   clientPhone?: string;

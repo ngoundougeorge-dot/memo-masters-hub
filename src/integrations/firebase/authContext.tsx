@@ -23,6 +23,7 @@ export interface FirebaseUserProfile {
   displayName?: string;
   role: UserRole;
   phone?: string;
+  academicLevel?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -41,6 +42,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   setUserRoleAsAdmin: (targetUid: string, newRole: UserRole) => Promise<boolean>;
   checkIsSignInWithEmailLink: () => boolean;
+  updateUserProfile: (updates: Partial<Pick<FirebaseUserProfile, "displayName" | "phone" | "academicLevel">>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -84,7 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: firebaseUser.email || data.email || "",
           displayName: data.displayName || firebaseUser.displayName || "",
           role: (data.role as UserRole) || "client",
-          phone: data.phone || "",
+          phone: data.phone || firebaseUser.phoneNumber || "",
+          academicLevel: data.academicLevel || "",
           createdAt: data.createdAt || new Date().toISOString(),
           updatedAt: data.updatedAt,
         };
@@ -106,6 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         uid: firebaseUser.uid,
         email: firebaseUser.email || "",
         displayName: firebaseUser.displayName || "",
+        phone: firebaseUser.phoneNumber || "",
+        academicLevel: "",
         role: initialRole,
         createdAt: new Date().toISOString(),
       };
@@ -127,6 +132,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         uid: firebaseUser.uid,
         email: firebaseUser.email || "",
         displayName: firebaseUser.displayName || "",
+        phone: firebaseUser.phoneNumber || "",
+        academicLevel: "",
         role: INITIAL_ADMIN_EMAILS.includes((firebaseUser.email || "").toLowerCase()) ? "admin" : "client",
         createdAt: new Date().toISOString(),
       };
@@ -272,6 +279,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // 9. Mise à jour des informations de profil (nom, téléphone, niveau d'études)
+  const updateUserProfile = async (
+    updates: Partial<Pick<FirebaseUserProfile, "displayName" | "phone" | "academicLevel">>
+  ) => {
+    if (!user) return;
+    try {
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+      setProfile((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev, ...updates };
+        if (typeof window !== "undefined") {
+          localStorage.setItem(CACHED_PROFILE_KEY, JSON.stringify(next));
+        }
+        return next;
+      });
+    } catch (err) {
+      console.warn("[Firebase Auth] Erreur mise à jour profil Firestore:", err);
+      // Mise à jour de l'état local en repli
+      setProfile((prev) => (prev ? { ...prev, ...updates } : null));
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -288,6 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         setUserRoleAsAdmin,
         checkIsSignInWithEmailLink,
+        updateUserProfile,
       }}
     >
       {children}

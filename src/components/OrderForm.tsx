@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,6 +18,7 @@ import {
   Sparkles,
   ArrowRight,
   HelpCircle,
+  UserCheck,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadDocumentToFirebase, syncOrderToFirebase } from "@/integrations/firebase";
+import { uploadDocumentToFirebase, syncOrderToFirebase, useAuth } from "@/integrations/firebase";
 import { submitOrder } from "@/lib/orders.functions";
 import { saveProjectData, getDefaultMilestones, getDefaultMessages, type ProjectDetails } from "@/lib/projectStore";
 
@@ -81,6 +82,8 @@ export default function OrderForm() {
   const [done, setDone] = useState<{ id: string; email: string } | null>(null);
   const submit = useServerFn(submitOrder);
 
+  const { user, profile, updateUserProfile } = useAuth();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -92,6 +95,29 @@ export default function OrderForm() {
       payment_method: "airtel_money",
     },
   });
+
+  // Remplissage automatique UNIQUEMENT et STRICTEMENT si l'utilisateur est connecté
+  useEffect(() => {
+    if (user) {
+      const nameVal = profile?.displayName || user.displayName || "";
+      const emailVal = user.email || profile?.email || "";
+      const phoneVal = profile?.phone || user.phoneNumber || "";
+      const academicVal = profile?.academicLevel || "";
+
+      if (nameVal) {
+        form.setValue("full_name", nameVal, { shouldValidate: true });
+      }
+      if (emailVal) {
+        form.setValue("email", emailVal, { shouldValidate: true });
+      }
+      if (phoneVal) {
+        form.setValue("phone", phoneVal, { shouldValidate: true });
+      }
+      if (academicVal) {
+        form.setValue("academic_level", academicVal, { shouldValidate: true });
+      }
+    }
+  }, [user, profile, form]);
 
   const selectedDocType = form.watch("document_type");
   const selectedPages = form.watch("pages");
@@ -211,6 +237,7 @@ export default function OrderForm() {
       const newProject: ProjectDetails = {
         id: `PRJ-2026-${orderId.slice(0, 6).toUpperCase()}`,
         orderId,
+        userId: user?.uid,
         clientName: values.full_name,
         clientEmail: values.email,
         clientPhone: values.phone,
@@ -242,6 +269,15 @@ export default function OrderForm() {
       syncOrderToFirebase(newProject).catch((e) => {
         console.warn("[OrderForm] Erreur sync Firebase:", e);
       });
+
+      // Mémorisation automatique des coordonnées dans le compte connecté
+      if (user) {
+        updateUserProfile({
+          displayName: values.full_name,
+          phone: values.phone,
+          academicLevel: values.academic_level,
+        }).catch((e) => console.warn("[OrderForm] Erreur mise à jour profil utilisateur:", e));
+      }
 
       // Save order id to client list
       try {
@@ -331,6 +367,40 @@ export default function OrderForm() {
           </span>
         </div>
       </div>
+
+      {/* Statut d'authentification et pré-remplissage automatique */}
+      {user ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-foreground">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <UserCheck className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">
+                Compte connecté :{" "}
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  {profile?.displayName || user.displayName || user.email}
+                </span>
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Vos informations personnelles (nom, email, téléphone) sont pré-remplies automatiquement depuis votre compte.
+              </p>
+            </div>
+          </div>
+          <span className="self-start sm:self-center text-[11px] font-medium bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-500/30 shrink-0">
+            Coordonnées pré-remplies
+          </span>
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl border border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
+          <span>
+            Vous possédez déjà un compte ? Connectez-vous pour pré-remplir automatiquement vos nom, email et téléphone.
+          </span>
+          <Button asChild variant="outline" size="sm" className="h-7 text-xs shrink-0 self-start sm:self-center">
+            <Link to="/auth">Se connecter</Link>
+          </Button>
+        </div>
+      )}
 
       {/* 1. Coordonnées de l'étudiant */}
       <div className="grid gap-4 sm:grid-cols-2">

@@ -17,6 +17,7 @@ import type { ProjectDetails } from "@/lib/projectStore";
 export interface FirebaseOrderData {
   id: string;
   orderId: string;
+  userId?: string;
   clientName: string;
   clientEmail: string;
   clientPhone: string;
@@ -66,6 +67,7 @@ export async function syncOrderToFirebase(project: ProjectDetails): Promise<bool
     const orderData: FirebaseOrderData = {
       id: project.id,
       orderId: project.orderId,
+      userId: project.userId || "",
       clientName: project.clientName || "",
       clientEmail: project.clientEmail || "",
       clientPhone: project.clientPhone || "",
