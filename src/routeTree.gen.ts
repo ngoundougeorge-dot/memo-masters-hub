@@ -12,8 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RedacteurRouteImport } from './routes/redacteur'
 import { Route as ClientRouteImport } from './routes/client'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PaiementRetourRouteImport } from './routes/paiement.retour'
+import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated/profil'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -30,6 +33,15 @@ const ClientRoute = ClientRouteImport.update({
   path: '/client',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -40,50 +52,76 @@ const PaiementRetourRoute = PaiementRetourRouteImport.update({
   path: '/paiement/retour',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedProfilRoute = AuthenticatedProfilRouteImport.update({
+  id: '/profil',
+  path: '/profil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/client': typeof ClientRoute
   '/redacteur': typeof RedacteurRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/profil': typeof AuthenticatedProfilRoute
   '/paiement/retour': typeof PaiementRetourRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/client': typeof ClientRoute
   '/redacteur': typeof RedacteurRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/profil': typeof AuthenticatedProfilRoute
   '/paiement/retour': typeof PaiementRetourRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
   '/client': typeof ClientRoute
   '/redacteur': typeof RedacteurRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/paiement/retour': typeof PaiementRetourRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/client'
     | '/redacteur'
     | '/sitemap.xml'
+    | '/profil'
     | '/paiement/retour'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/client' | '/redacteur' | '/sitemap.xml' | '/paiement/retour'
+  to:
+    | '/'
+    | '/auth'
+    | '/client'
+    | '/redacteur'
+    | '/sitemap.xml'
+    | '/profil'
+    | '/paiement/retour'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
+    | '/auth'
     | '/client'
     | '/redacteur'
     | '/sitemap.xml'
+    | '/_authenticated/profil'
     | '/paiement/retour'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
   ClientRoute: typeof ClientRoute
   RedacteurRoute: typeof RedacteurRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -113,6 +151,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -127,11 +179,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaiementRetourRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/profil': {
+      id: '/_authenticated/profil'
+      path: '/profil'
+      fullPath: '/profil'
+      preLoaderRoute: typeof AuthenticatedProfilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedProfilRoute: AuthenticatedProfilRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
   ClientRoute: ClientRoute,
   RedacteurRoute: RedacteurRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,

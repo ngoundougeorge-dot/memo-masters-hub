@@ -84,9 +84,12 @@ function Home() {
             <a href="#avis" className="hover:text-foreground">Avis</a>
             <a href="#commander" className="hover:text-foreground">Commander</a>
           </nav>
-          <Button asChild size="sm">
-            <a href="#commander">Commander</a>
-          </Button>
+          <div className="flex items-center gap-2">
+            <AuthButton />
+            <Button asChild size="sm">
+              <a href="#commander">Commander</a>
+            </Button>
+          </div>
         </div>
       </header>
 
