@@ -6,6 +6,8 @@ import {
   signInWithEmailLink,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
   signOut,
   type User,
   type ActionCodeSettings,
@@ -33,6 +35,7 @@ interface AuthContextType {
   isMagicLinkSent: boolean;
   sendSignInLink: (email: string, redirectUrl?: string) => Promise<void>;
   completeMagicLinkSignIn: (emailOverride?: string) => Promise<boolean>;
+  loginWithGoogle: () => Promise<void>;
   loginWithPassword: (email: string, pass: string) => Promise<void>;
   registerWithPassword: (email: string, pass: string, fullName?: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -206,7 +209,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
-  // 4. Connexion classique avec mot de passe
+  // 4. Connexion avec Google
+  const loginWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    const cred = await signInWithPopup(auth, provider);
+    if (cred.user) {
+      await syncOrCreateUserProfile(cred.user);
+    }
+  };
+
+  // 5. Connexion classique avec mot de passe
   const loginWithPassword = async (email: string, pass: string) => {
     const cred = await signInWithEmailAndPassword(auth, email.trim(), pass);
     if (cred.user) {
@@ -214,7 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 5. Inscription classique avec mot de passe
+  // 6. Inscription classique avec mot de passe
   const registerWithPassword = async (email: string, pass: string, fullName?: string) => {
     const cred = await createUserWithEmailAndPassword(auth, email.trim(), pass);
     if (cred.user) {
@@ -229,7 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 6. Déconnexion
+  // 7. Déconnexion
   const logout = async () => {
     await signOut(auth);
     setUser(null);
@@ -239,7 +252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 7. Modification du rôle par un Administrateur
+  // 8. Modification du rôle par un Administrateur
   // SÉCURITÉ : Un client ne peut JAMAIS changer un rôle ni s'attribuer le rôle admin
   const setUserRoleAsAdmin = async (targetUid: string, newRole: UserRole): Promise<boolean> => {
     if (profile?.role !== "admin") {
@@ -269,6 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isMagicLinkSent,
         sendSignInLink,
         completeMagicLinkSignIn,
+        loginWithGoogle,
         loginWithPassword,
         registerWithPassword,
         logout,
