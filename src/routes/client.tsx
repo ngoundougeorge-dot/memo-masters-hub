@@ -69,10 +69,10 @@ export const Route = createFileRoute("/client")({
 });
 
 const TIMELINE = [
-  { label: "Commande reçue", statuses: ["nouveau"], icon: Inbox },
-  { label: "Paiement confirmé", statuses: ["paiement_recu"], icon: CreditCard },
-  { label: "Rédaction & Jalons", statuses: ["en_cours", "redaction", "documents_envoyes"], icon: PenTool },
-  { label: "Mémoire terminé", statuses: ["livre"], icon: Package },
+  { label: "Inscrit & Reçu", statuses: ["nouveau"], icon: Inbox },
+  { label: "Projet Créé", statuses: ["documents_envoyes"], icon: FileCheck2 },
+  { label: "Rédaction en cours", statuses: ["en_cours", "redaction"], icon: PenTool },
+  { label: "Terminé & Envoyé", statuses: ["livre"], icon: Package },
 ] as const;
 
 function ClientDashboard() {
@@ -305,7 +305,7 @@ function ClientDashboard() {
 
                     if (idx === 0) done = true;
                     if (idx === 1) {
-                      done = isPaid;
+                      done = true;
                       active = !isPaid;
                     }
                     if (idx === 2) {

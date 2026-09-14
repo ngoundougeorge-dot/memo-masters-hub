@@ -183,17 +183,22 @@ export default function OrderForm() {
         console.warn("[OrderForm] Remote submit error, storing locally in PWA mode:", err);
       }
 
-      // Initialize structured project in projectStore
+      // Initialize structured project in projectStore with all student instructions & files
       const newProject: ProjectDetails = {
         id: `PRJ-2026-${orderId.slice(0, 6).toUpperCase()}`,
         orderId,
+        clientName: values.full_name,
+        clientEmail: values.email,
+        clientPhone: values.phone,
         subject: values.subject,
         documentType: values.document_type,
         academicLevel: values.academic_level,
-        objective: `Rédaction complète (${values.pages} pages) avec méthodologie, analyse critique et normes universitaires.`,
-        means: "Documentation scientifique spécialisée, Rédacteur Senior dédié, Assistant IA et contrôle anti-plagiat.",
+        pages: Number(values.pages),
+        objective: `Rédaction complète (${values.pages} pages) avec méthodologie, analyse critique et normes universitaires CAMES.`,
+        means: "Bases de données scientifiques universitaires (JSTOR, Cairn, Revues CAMES), Rédacteur Senior dédié et audit anti-plagiat Turnitin.",
         deadline: values.deadline,
         priceFcfa: estimatedPrice,
+        paymentMethod: values.payment_method,
         paymentConfirmed: false,
         isCompleted: false,
         finalReportReady: false,
@@ -203,6 +208,8 @@ export default function OrderForm() {
         guidelinesText: values.guidelines_text,
         hasCoverPage: values.has_cover_page === "oui",
         coverPageText: values.cover_page_text,
+        filePaths: paths,
+        createdAt: new Date().toISOString(),
         milestones: getDefaultMilestones(orderId, values.document_type),
         messages: getDefaultMessages(orderId),
       };

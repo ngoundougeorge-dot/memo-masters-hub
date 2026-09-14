@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Lock,
   ArrowLeft,
+  Briefcase,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -256,8 +257,11 @@ function AdminDashboard() {
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">Actualiser</span>
             </Button>
-            <Button asChild size="sm" variant="ghost" className="h-8 text-xs">
-              <Link to="/redacteur">Espace Rédacteur</Link>
+            <Button asChild size="sm" className="h-8 text-xs bg-primary text-primary-foreground font-semibold gap-1.5 igloo-spring-btn">
+              <Link to="/redacteur">
+                <Briefcase className="h-3.5 w-3.5" />
+                <span>Espace Rédaction & Mémoires</span>
+              </Link>
             </Button>
             <Button asChild size="sm" variant="ghost" className="h-8 text-xs">
               <Link to="/client">Espace Client</Link>

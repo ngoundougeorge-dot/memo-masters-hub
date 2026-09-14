@@ -26,13 +26,18 @@ export type ProjectMessage = {
 export type ProjectDetails = {
   id: string; // ex: PRJ-2026-8A3F
   orderId: string;
+  clientName?: string;
+  clientEmail?: string;
+  clientPhone?: string;
   subject: string;
   documentType: string;
   academicLevel?: string;
+  pages?: number;
   objective: string;
   means: string;
   deadline: string;
   priceFcfa: number;
+  paymentMethod?: string;
   paymentConfirmed: boolean;
   isCompleted: boolean;
   finalReportReady: boolean;
@@ -43,11 +48,14 @@ export type ProjectDetails = {
   guidelinesText?: string;
   hasCoverPage: boolean;
   coverPageText?: string;
+  filePaths?: string[];
+  createdAt?: string;
   milestones: Milestone[];
   messages: ProjectMessage[];
 };
 
 const STORAGE_PREFIX = "memoirepro_project_";
+const ALL_ORDERS_INDEX_KEY = "memoirepro_all_orders_index";
 
 // Mock template milestones when project is activated
 export function getDefaultMilestones(orderId: string, docType: string): Milestone[] {
@@ -133,6 +141,26 @@ export function getProjectData(orderId: string, fallbackSubject?: string): Proje
 export function saveProjectData(project: ProjectDetails): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(`${STORAGE_PREFIX}${project.orderId}`, JSON.stringify(project));
+
+  // Maintain master index of all projects for the admin / writer
+  try {
+    const raw = localStorage.getItem(ALL_ORDERS_INDEX_KEY);
+    const list: string[] = raw ? JSON.parse(raw) : [];
+    if (!list.includes(project.orderId)) {
+      localStorage.setItem(ALL_ORDERS_INDEX_KEY, JSON.stringify([project.orderId, ...list]));
+    }
+  } catch {}
+}
+
+export function getAllProjects(): ProjectDetails[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(ALL_ORDERS_INDEX_KEY);
+    const list: string[] = raw ? JSON.parse(raw) : [];
+    return list.map((id) => getProjectData(id)).filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 function createEmptyProject(orderId: string, subject?: string): ProjectDetails {
@@ -146,7 +174,7 @@ function createEmptyProject(orderId: string, subject?: string): ProjectDetails {
     objective:
       "Rédaction complète et originale avec problématique, revue de littérature, démarche méthodologique rigoureuse et références vérifiées.",
     means:
-      "Bases de données académiques (JSTOR, Cairn, Google Scholar), Rédacteur Senior spécialisé, Assistant IA d'analyse et détection anti-plagiat Turnitin.",
+      "Bases de données universitaires et revues scientifiques (Cairn, JSTOR, CAMES), Rédacteur Senior spécialisé et audit anti-plagiat Turnitin.",
     deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 18).toISOString(),
     priceFcfa: 150000,
     paymentConfirmed: false,
