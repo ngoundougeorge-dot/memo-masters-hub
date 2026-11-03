@@ -140,6 +140,8 @@ export type Database = {
         | "rapport_stage"
         | "correction"
         | "autre"
+        | "travail_recherche"
+        | "presentation"
       order_status:
         | "nouveau"
         | "paiement_recu"
@@ -281,6 +283,8 @@ export const Constants = {
         "rapport_stage",
         "correction",
         "autre",
+        "travail_recherche",
+        "presentation",
       ],
       order_status: [
         "nouveau",

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatDocType } from "@/lib/documentTypes";
 
 type OrderRow = {
   id: string;
@@ -411,7 +412,7 @@ function WriterDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-                    <div>Type : {o.document_type}</div>
+                    <div>Type : {formatDocType(o.document_type)}</div>
                     <div>Pages : {o.pages ?? "—"}</div>
                     <div>
                       Deadline :{" "}

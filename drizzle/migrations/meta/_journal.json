@@ -8,6 +8,13 @@
       "when": 1789378723948,
       "tag": "0000_create_profiles_and_user_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793709793995,
+      "tag": "0001_add_document_types_research_presentation",
+      "breakpoints": true
     }
   ]
 }

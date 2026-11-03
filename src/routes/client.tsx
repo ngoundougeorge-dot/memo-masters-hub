@@ -16,6 +16,7 @@ import { getOrderPublic } from "@/lib/orders.functions";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OrderFilesUpload from "@/components/OrderFilesUpload";
+import { formatDocType } from "@/lib/documentTypes";
 
 type ClientSearch = {
   order_id?: string;
@@ -287,13 +288,3 @@ function StatusTimeline({ status }: { status: string }) {
   );
 }
 
-function formatDocType(type: string) {
-  const map: Record<string, string> = {
-    memoire_licence: "Mémoire de licence",
-    memoire_master: "Mémoire de master",
-    rapport_stage: "Rapport de stage",
-    correction: "Correction",
-    autre: "Autre",
-  };
-  return map[type] ?? type;
-}

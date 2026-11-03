@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { submitOrder } from "@/lib/orders.functions";
+import { DOCUMENT_TYPES } from "@/lib/documentTypes";
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Nom trop court"),
@@ -28,6 +29,8 @@ const schema = z.object({
     "memoire_licence",
     "memoire_master",
     "rapport_stage",
+    "travail_recherche",
+    "presentation",
     "correction",
     "autre",
   ]),
@@ -180,11 +183,11 @@ export default function OrderForm() {
           >
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="memoire_licence">Mémoire de licence</SelectItem>
-              <SelectItem value="memoire_master">Mémoire de master</SelectItem>
-              <SelectItem value="rapport_stage">Rapport de stage</SelectItem>
-              <SelectItem value="correction">Correction / relecture</SelectItem>
-              <SelectItem value="autre">Autre</SelectItem>
+              {DOCUMENT_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
