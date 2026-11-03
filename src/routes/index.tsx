@@ -11,7 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import heroImg from "@/assets/hero-thesis.jpg";
+import heroImg from "@/assets/hero-academic.jpg";
 import { Button } from "@/components/ui/button";
 import AuthButton from "@/components/AuthButton";
 import OrderForm from "@/components/OrderForm";
@@ -106,9 +106,10 @@ function Home() {
               Votre mémoire, rédigé avec la rigueur qu'il mérite.
             </h1>
             <p className="mt-5 max-w-lg text-lg text-muted-foreground">
-              Un service de rédaction personnalisée pour vos mémoires de licence, master et
-              rapports de stage. Sources correctement citées, garantie anti-plagiat, tarifs
-              transparents en Franc CFA.
+              Un service de rédaction personnalisée pour vos mémoires de licence et de master,
+              rapports de stage, travaux de recherche et présentations PowerPoint / Power BI.
+              Sources correctement citées, garantie anti-plagiat, tarifs transparents en Franc
+              CFA.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">

@@ -9,6 +9,8 @@ const OrderInput = z.object({
     "memoire_licence",
     "memoire_master",
     "rapport_stage",
+    "travail_recherche",
+    "presentation",
     "correction",
     "autre",
   ]),
