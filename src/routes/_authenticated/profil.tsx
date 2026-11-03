@@ -195,7 +195,7 @@ function ProfilPage() {
                       id="fullName"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Jean-Pierre Nguema"
+                      placeholder="Awa Ndiaye"
                     />
                   </div>
                   <div className="space-y-2">
@@ -204,7 +204,7 @@ function ProfilPage() {
                       id="phone"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+241 74 00 00 00"
+                      placeholder="+221 77 000 00 00"
                     />
                   </div>
                   <div className="sm:col-span-2">

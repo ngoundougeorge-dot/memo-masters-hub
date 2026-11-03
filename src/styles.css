@@ -114,50 +114,9 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
   }
   h1, h2, h3, .font-serif {
     font-family: var(--font-serif);
     letter-spacing: -0.01em;
   }
 }
-
-/* ====================================================================
-   Clean & Static Academic Styling (Animations removed)
-   ==================================================================== */
-
-.igloo-aurora-bg {
-  display: none !important;
-}
-
-/* Clean translucent panel styling */
-.igloo-glass {
-  background: var(--card);
-  border: 1px solid var(--border);
-}
-
-.dark .igloo-glass {
-  background: var(--card);
-  border: 1px solid var(--border);
-}
-
-/* Static card styling */
-.igloo-tilt-card {
-  position: relative;
-}
-
-.igloo-specular-sheen {
-  display: none !important;
-}
-
-/* Clean static indicators */
-.igloo-pulse-dot {
-  position: relative;
-  display: inline-flex;
-}
-
-.igloo-spring-btn {
-  /* static button */
-}
-
-

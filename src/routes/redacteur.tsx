@@ -1,63 +1,53 @@
 import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import {
-  Briefcase,
-  Calendar,
-  CheckCircle2,
-  CircleDot,
-  Clock,
-  Copy,
-  CreditCard,
-  DollarSign,
-  Download,
-  FileCheck2,
-  FileText,
-  Lock,
-  Mail,
-  MessageSquare,
-  Paperclip,
-  PenTool,
-  Phone,
-  Plus,
-  RefreshCw,
-  Send,
-  ShieldAlert,
-  ShieldCheck,
-  Target,
-  User,
-  Users,
-} from "lucide-react";
+import { Bell, ChevronDown, ChevronUp, CircleDot, FileText, Inbox, Loader2, Lock, ShieldAlert } from "lucide-react";
 
+import { listWriterOrders, markWriterOrdersSeen } from "@/lib/orders.functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { TiltCard } from "@/components/TiltCard";
-import { RoleGuard } from "@/components/RoleGuard";
-import { supabase } from "@/integrations/supabase/client";
-import { fetchFirebaseOrders } from "@/integrations/firebase";
-import {
-  getProjectData,
-  saveProjectData,
-  getAllProjects,
-  setProjectPaymentConfirmed,
-  setProjectCompleted,
-  addProjectMessage,
-  addNewMilestone,
-  type ProjectDetails,
-  type Milestone,
-} from "@/lib/projectStore";
+
+type OrderRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  subject: string;
+  document_type: string;
+  status: string;
+  price_fcfa: number | null;
+  pages: number | null;
+  deadline: string | null;
+  created_at: string;
+  documents_submitted_at: string | null;
+  file_paths: string[] | null;
+  writer_seen_at: string | null;
+};
+
+function buildHistory(o: OrderRow) {
+  const events: { label: string; at: string }[] = [
+    { label: "Commande reçue", at: o.created_at },
+  ];
+  if (["paiement_recu", "documents_envoyes", "en_cours", "redaction", "livre"].includes(o.status)) {
+    // paiement confirmé — pas d'horodatage dédié, on utilise created_at comme proxy si absent
+    events.push({ label: "Paiement confirmé", at: o.created_at });
+  }
+  if (o.documents_submitted_at) {
+    events.push({ label: "Documents soumis par le client", at: o.documents_submitted_at });
+  }
+  if (["en_cours", "redaction"].includes(o.status)) {
+    events.push({ label: "Rédaction démarrée", at: o.documents_submitted_at ?? o.created_at });
+  }
+  if (o.status === "livre") {
+    events.push({ label: "Document livré", at: o.documents_submitted_at ?? o.created_at });
+  }
+  return events;
+}
+
+const STORAGE_KEY = "memoirepro:writer_key";
 
 type Search = { key?: string };
 
@@ -68,948 +58,436 @@ export const Route = createFileRoute("/redacteur")({
   }),
   head: () => ({
     meta: [
-      { title: "Espace Administration & Rédaction — MémoirePro Gabon" },
-      {
-        name: "description",
-        content:
-          "Tableau de bord administrateur & rédacteur pour le pilotage des projets de mémoires au Gabon.",
-      },
+      { title: "Espace rédacteur — MémoirePro" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: WriterDashboard,
 });
 
+const STATUS_LABEL: Record<string, string> = {
+  nouveau: "Paiement en attente",
+  paiement_recu: "Payé",
+  documents_envoyes: "Documents envoyés",
+  en_cours: "En préparation",
+  redaction: "En rédaction",
+  livre: "Livré",
+};
+
 function WriterDashboard() {
-  const [projects, setProjects] = useState<ProjectDetails[]>(() => {
-    if (typeof window !== "undefined") {
-      return getAllProjects();
-    }
-    return [];
-  });
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-  const [chatMessage, setChatMessage] = useState<string>("");
-  const [newMilestoneTitle, setNewMilestoneTitle] = useState<string>("");
-  const [newMilestonePreview, setNewMilestonePreview] = useState<string>("");
-  const [newMilestoneNotes, setNewMilestoneNotes] = useState<string>("");
-  const [showMilestoneModal, setShowMilestoneModal] = useState<boolean>(false);
-  const [loadingRemote, setLoadingRemote] = useState<boolean>(false);
+  const search = Route.useSearch();
+  const qc = useQueryClient();
+  const [accessKey, setAccessKey] = useState<string>("");
+  const [input, setInput] = useState("");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  // Active project
-  const activeProject = useMemo(() => {
-    return projects.find((p) => p.orderId === selectedProjectId) || projects[0] || null;
-  }, [projects, selectedProjectId]);
-
-  // Synchronisation des Projets réels depuis le backend (Firebase Firestore + Supabase + LocalStore)
-  const syncProjects = async () => {
-    setLoadingRemote(true);
-    const map = new Map<string, ProjectDetails>();
-
-    // 1. Charger tous les projets réels enregistrés localement
-    const localProjects = getAllProjects();
-    localProjects.forEach((p) => map.set(p.orderId, p));
-
-    // 2. Charger les commandes réelles Cloud Firestore
-    try {
-      const fbOrders = await fetchFirebaseOrders();
-      fbOrders.forEach((row) => {
-        const orderId = row.orderId || row.id;
-        if (!map.has(orderId)) {
-          const p: ProjectDetails = {
-            id: row.id.startsWith("PRJ-") ? row.id : `PRJ-2026-${orderId.slice(0, 6).toUpperCase()}`,
-            orderId,
-            userId: row.userId,
-            clientName: row.clientName || "Étudiant",
-            clientEmail: row.clientEmail || "",
-            clientPhone: row.clientPhone || "",
-            subject: row.subject || "Mémoire Académique",
-            documentType: row.documentType || "memoire_master",
-            academicLevel: row.academicLevel || "",
-            pages: row.pages || 60,
-            objective: row.instructions || `Rédaction complète (${row.pages || 60} pages).`,
-            means: "Documentation universitaire spécialisée et contrôle anti-plagiat.",
-            deadline: row.createdAt?.toDate ? row.createdAt.toDate().toISOString() : (row.createdAt || new Date().toISOString()),
-            priceFcfa: row.priceFcfa || 75000,
-            paymentMethod: row.paymentMethod || "Airtel Money Gabon",
-            paymentConfirmed: row.paymentConfirmed || row.status === "en_cours" || row.status === "terminé",
-            isCompleted: row.status === "terminé" || row.status === "envoyé",
-            finalReportReady: row.status === "terminé" || row.status === "envoyé",
-            hasPlan: Boolean(row.planText),
-            planText: row.planText || "",
-            hasGuidelines: Boolean(row.guidelinesText),
-            guidelinesText: row.guidelinesText || "",
-            hasCoverPage: Boolean(row.coverPageText),
-            coverPageText: row.coverPageText || "",
-            filePaths: row.fileUrls || [],
-            createdAt: row.createdAt?.toDate ? row.createdAt.toDate().toISOString() : (row.createdAt || new Date().toISOString()),
-            milestones: [
-              {
-                id: `ms-${orderId}-1`,
-                orderId,
-                stepNumber: 1,
-                title: "Jalon 1 : Cadrage, Problématique & Plan détaillé",
-                contentPreview: "Validation de la problématique et de la structure du plan.",
-                status: "en_attente",
-                submittedAt: row.createdAt?.toDate ? row.createdAt.toDate().toISOString() : (row.createdAt || new Date().toISOString()),
-              },
-            ],
-            messages: [],
-          };
-          map.set(orderId, p);
-        }
-      });
-    } catch (fbErr) {
-      console.warn("[WriterDashboard] Erreur récupération Firebase:", fbErr);
-    }
-
-    // 3. Charger les commandes distantes Supabase si disponibles
-    try {
-      const { data: remoteOrders } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (remoteOrders && remoteOrders.length > 0) {
-        remoteOrders.forEach((row: any) => {
-          if (!map.has(row.id)) {
-            let parsedGuidelines = row.instructions || "";
-            let parsedPlan = "";
-            let parsedCover = "";
-            try {
-              if (row.instructions && row.instructions.startsWith("{")) {
-                const parsed = JSON.parse(row.instructions);
-                parsedGuidelines = parsed.guidelines || "";
-                parsedPlan = parsed.plan_text || "";
-                parsedCover = parsed.cover_page_text || "";
-              }
-            } catch {}
-
-            const p: ProjectDetails = {
-              id: `PRJ-2026-${row.id.slice(0, 6).toUpperCase()}`,
-              orderId: row.id,
-              clientName: row.full_name || "Étudiant",
-              clientEmail: row.email || "",
-              clientPhone: row.phone || "",
-              subject: row.subject || "Mémoire Académique",
-              documentType: row.document_type || "memoire_master",
-              academicLevel: row.academic_level || "",
-              pages: row.pages || 60,
-              objective: `Rédaction complète (${row.pages || 60} pages).`,
-              means:
-                "Documentation scientifique spécialisée, Rédacteur Senior dédié et contrôle anti-plagiat Turnitin.",
-              deadline: row.deadline || new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString(),
-              priceFcfa: row.price_fcfa || 150000,
-              paymentMethod: row.payment_method || "Airtel Money Gabon",
-              paymentConfirmed:
-                row.status === "paiement_recu" || row.status === "en_cours" || row.status === "livre",
-              isCompleted: row.status === "livre",
-              finalReportReady: row.status === "livre",
-              hasPlan: Boolean(parsedPlan),
-              planText: parsedPlan,
-              hasGuidelines: Boolean(parsedGuidelines),
-              guidelinesText: parsedGuidelines,
-              hasCoverPage: Boolean(parsedCover),
-              coverPageText: parsedCover,
-              filePaths: (row.file_paths as string[]) || [],
-              createdAt: row.created_at,
-              milestones: [
-                {
-                  id: `ms-${row.id}-1`,
-                  orderId: row.id,
-                  stepNumber: 1,
-                  title: "Jalon 1 : Cadrage, Problématique & Plan détaillé",
-                  contentPreview: "Validation de la problématique et de la structure du plan.",
-                  status:
-                    row.status === "nouveau" ? "en_attente" : "soumis",
-                  submittedAt: row.created_at,
-                },
-              ],
-              messages: [],
-            };
-            map.set(row.id, p);
-            saveProjectData(p);
-          }
-        });
-      }
-    } catch (err) {
-      console.warn("[WriterDashboard] Erreur récupération Supabase:", err);
-    } finally {
-      setLoadingRemote(false);
-    }
-
-    const merged = Array.from(map.values());
-    setProjects(merged);
-
-    // Si le projet sélectionné n'existe pas, sélectionner le premier
-    if (!merged.some((p) => p.orderId === selectedProjectId) && merged.length > 0) {
-      setSelectedProjectId(merged[0].orderId);
-    }
+  const toggleExpanded = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   useEffect(() => {
-    syncProjects();
-  }, []);
+    const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+    const initial = search.key || stored || "";
+    if (initial) setAccessKey(initial);
+  }, [search.key]);
 
-  // Action: Basculer le Paiement Reçu (Déclenche le passage en "Rédaction en cours" et débloque les jalons)
-  const handleTogglePayment = (orderId: string) => {
-    const proj = projects.find((p) => p.orderId === orderId);
-    if (!proj) return;
+  useEffect(() => {
+    if (!accessKey) return;
+    let cancelled = false;
+    let channel: ReturnType<typeof import("@/integrations/supabase/client").supabase.channel> | null = null;
+    const processedEventIds = new Set<string>();
+    const MAX_PROCESSED = 50;
 
-    const nextState = !proj.paymentConfirmed;
-    const updated = setProjectPaymentConfirmed(orderId, nextState);
+    const dedupeKey = (payload: {
+      event_id?: string;
+      id?: string;
+      status?: string;
+      writer_seen_at?: string | null;
+      documents_submitted_at?: string | null;
+    }) =>
+      payload.event_id ??
+      `${payload.id}:${payload.status}:${payload.writer_seen_at ?? "-"}:${payload.documents_submitted_at ?? "-"}`;
 
-    setProjects((prev) => prev.map((p) => (p.orderId === orderId ? { ...updated } : p)));
+    (async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      if (cancelled) return;
+      channel = supabase
+        .channel("writer_orders")
+        .on(
+          "broadcast",
+          { event: "order_change" },
+          (message: {
+            payload?: {
+              event_id?: string;
+              id?: string;
+              status?: string;
+              writer_seen_at?: string | null;
+              documents_submitted_at?: string | null;
+            };
+          }) => {
+            const payload = message.payload;
+            if (!payload?.id) return;
 
-    if (nextState) {
-      toast.success(`Paiement validé pour le projet ${proj.id} !`, {
-        description: "Statut basculé en « Mémoire en cours de rédaction ». Les jalons sont accessibles au client.",
-        icon: <CreditCard className="h-4 w-4 text-emerald-600" />,
-      });
-    } else {
-      toast.info(`Paiement repassé en attente pour le projet ${proj.id}.`);
-    }
-  };
+            const key = dedupeKey(payload);
+            if (processedEventIds.has(key)) return;
+            processedEventIds.add(key);
+            if (processedEventIds.size > MAX_PROCESSED) {
+              const first = processedEventIds.values().next().value;
+              if (first) processedEventIds.delete(first);
+            }
 
-  // Action: Basculer Mémoire Terminé & Envoyé (Débloque le téléchargement client et le certificat)
-  const handleToggleCompleted = (orderId: string) => {
-    const proj = projects.find((p) => p.orderId === orderId);
-    if (!proj) return;
+            qc.setQueryData<OrderRow[]>(["writer-orders", accessKey], (current) => {
+              if (!current) return current;
+              return current.map((row) => {
+                if (row.id !== payload.id) return row;
+                const wasUnread = row.status === "documents_envoyes" && !row.writer_seen_at;
+                const next: OrderRow = {
+                  ...row,
+                  status: payload.status ?? row.status,
+                  writer_seen_at: payload.writer_seen_at ?? row.writer_seen_at,
+                  documents_submitted_at: payload.documents_submitted_at ?? row.documents_submitted_at,
+                };
+                const isNowRead = next.status === "documents_envoyes" && next.writer_seen_at;
+                if (wasUnread && isNowRead) {
+                  toast.success(`Notification lue pour : ${next.subject}`);
+                } else if (payload.status && row.status !== payload.status) {
+                  const label = STATUS_LABEL[payload.status] ?? payload.status;
+                  toast.info(`Statut mis à jour : ${next.subject} → ${label}`);
+                }
+                return next;
+              });
+            });
+            qc.invalidateQueries({ queryKey: ["writer-orders", accessKey] });
+          },
+        )
+        .subscribe();
+    })();
+    return () => {
+      cancelled = true;
+      if (channel) {
+        import("@/integrations/supabase/client").then(({ supabase }) => {
+          supabase.removeChannel(channel!);
+        });
+      }
+    };
+  }, [accessKey, qc]);
 
-    const nextState = !proj.isCompleted;
-    const updated = setProjectCompleted(orderId, nextState);
+  const query = useQuery({
+    queryKey: ["writer-orders", accessKey],
+    queryFn: () => listWriterOrders({ data: { key: accessKey } }),
+    enabled: accessKey.length > 0,
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+  });
 
-    setProjects((prev) => prev.map((p) => (p.orderId === orderId ? { ...updated } : p)));
+  const submitted = useMemo(
+    () => (query.data ?? []).filter((o) => o.status === "documents_envoyes"),
+    [query.data],
+  );
+  const unseen = useMemo(
+    () => submitted.filter((o) => !o.writer_seen_at),
+    [submitted],
+  );
 
-    if (nextState) {
-      toast.success(`Mémoire ${proj.id} marqué Terminé & Envoyé !`, {
-        description: "Le client peut désormais télécharger son manuscrit (.DOCX) et son Certificat Anti-Plagiat.",
-        icon: <CheckCircle2 className="h-4 w-4 text-emerald-600" />,
-      });
-    } else {
-      toast.info(`Mémoire ${proj.id} repassé en cours de rédaction.`);
-    }
-  };
+  const markMutation = useMutation({
+    mutationFn: (vars: { orderIds?: string[]; all?: boolean }) =>
+      markWriterOrdersSeen({ data: { key: accessKey, ...vars } }),
+    onMutate: async (vars) => {
+      await qc.cancelQueries({ queryKey: ["writer-orders", accessKey] });
+      const prev = qc.getQueryData<OrderRow[]>(["writer-orders", accessKey]);
+      const now = new Date().toISOString();
+      qc.setQueryData<OrderRow[]>(["writer-orders", accessKey], (rows) =>
+        (rows ?? []).map((r) => {
+          const match = vars.all
+            ? r.status === "documents_envoyes" && !r.writer_seen_at
+            : (vars.orderIds ?? []).includes(r.id);
+          return match ? { ...r, writer_seen_at: r.writer_seen_at ?? now } : r;
+        }),
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["writer-orders", accessKey], ctx.prev);
+      toast.error("Impossible de synchroniser la lecture sur le serveur");
+    },
+    onSuccess: (_data, vars) => {
+      toast.success(
+        vars.all
+          ? "Toutes les notifications sont marquées comme lues"
+          : "Notification marquée comme lue",
+      );
+      qc.invalidateQueries({ queryKey: ["writer-orders", accessKey] });
+    },
+  });
 
-  // Action: Envoyer Message Interne au Client
-  const handleSendChat = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatMessage.trim() || !activeProject) return;
+  const markOneSeen = (id: string) => markMutation.mutate({ orderIds: [id] });
+  const markAllSeen = () => markMutation.mutate({ all: true });
 
-    const updated = addProjectMessage(
-      activeProject.orderId,
-      "redacteur",
-      "Dr. Stéphane Ondo (Rédacteur)",
-      chatMessage.trim()
+  if (!accessKey) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-primary" />
+              <CardTitle className="font-serif">Accès rédacteur</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Saisissez la clé d'accès rédacteur pour consulter les commandes.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="writer-key">Clé d'accès</Label>
+              <Input
+                id="writer-key"
+                type="password"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="••••••••••••"
+              />
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => {
+                if (!input) return;
+                localStorage.setItem(STORAGE_KEY, input);
+                setAccessKey(input);
+              }}
+            >
+              Se connecter
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
     );
-
-    setProjects((prev) =>
-      prev.map((p) => (p.orderId === activeProject.orderId ? { ...updated } : p))
-    );
-    setChatMessage("");
-    toast.success("Message transmis à l'étudiant !");
-  };
-
-  // Action: Publier un nouveau Jalon
-  const handleAddMilestoneSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMilestoneTitle.trim() || !newMilestonePreview.trim() || !activeProject) return;
-
-    const updated = addNewMilestone(
-      activeProject.orderId,
-      newMilestoneTitle.trim(),
-      newMilestonePreview.trim(),
-      newMilestoneNotes.trim() || undefined
-    );
-
-    setProjects((prev) =>
-      prev.map((p) => (p.orderId === activeProject.orderId ? { ...updated } : p))
-    );
-
-    setShowMilestoneModal(false);
-    setNewMilestoneTitle("");
-    setNewMilestonePreview("");
-    setNewMilestoneNotes("");
-    toast.success("Nouveau jalon publié et accessible au client en consultation !");
-  };
+  }
 
   return (
-    <RoleGuard
-      allowedRoles={["redacteur", "admin"]}
-      fallbackTitle="Console de Rédaction Académique"
-      customMessage="L'accès à l'espace de rédaction et de suivi des manuscrits est strictement réservé aux Rédacteurs et aux Administrateurs."
-    >
-      <main className="min-h-screen bg-background pb-16">
-      {/* Header Unifié Administration & Rédaction */}
-      <header className="border-b border-border/70 bg-card/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
+    <main className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <Link to="/" className="font-serif text-xl font-semibold text-foreground">
+            MémoirePro · Rédaction
+          </Link>
           <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-2">
-              <span className="font-serif text-xl font-bold text-primary">MémoirePro Gabon</span>
-              <span className="text-xs bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full font-semibold">
-                Administration & Rédaction
-              </span>
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-2.5">
+            <div className="relative">
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              {unseen.length > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {unseen.length}
+                </span>
+              )}
+            </div>
             <Button
+              variant="ghost"
               size="sm"
-              variant="outline"
-              onClick={syncProjects}
-              disabled={loadingRemote}
-              className="h-8 text-xs gap-1.5"
+              onClick={() => {
+                localStorage.removeItem(STORAGE_KEY);
+                setAccessKey("");
+              }}
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${loadingRemote ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">Actualiser</span>
-            </Button>
-
-            <Button asChild size="sm" variant="default" className="gap-1.5 h-8 text-xs bg-amber-600 hover:bg-amber-700 text-white font-semibold">
-              <Link to="/admin">
-                <Users className="h-3.5 w-3.5" />
-                <span>Gestion Utilisateurs & Rôles</span>
-              </Link>
-            </Button>
-
-            <Button asChild size="sm" variant="ghost" className="h-8 text-xs">
-              <Link to="/client" search={{ order_id: activeProject?.orderId }}>
-                Vue Client
-              </Link>
+              Se déconnecter
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 space-y-6">
-        {/* En-tête de section */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        {unseen.length > 0 && (
+          <div className="mb-6 flex items-start justify-between gap-4 rounded-xl border-2 border-indigo-300 bg-indigo-50 p-5 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-indigo-600 p-2 text-white">
+                <Bell className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-serif text-lg font-semibold text-indigo-900">
+                  {unseen.length} nouvelle{unseen.length > 1 ? "s" : ""} soumission
+                  {unseen.length > 1 ? "s" : ""} de documents
+                </h2>
+                <p className="mt-1 text-sm text-indigo-800/80">
+                  {unseen
+                    .slice(0, 3)
+                    .map((o) => o.full_name)
+                    .join(", ")}
+                  {unseen.length > 3 ? ` et ${unseen.length - 3} autre(s)` : ""} viennent de
+                  soumettre leurs fichiers.
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={markAllSeen}>
+              Tout marquer comme vu
+            </Button>
+          </div>
+        )}
+
+        <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
-              Pilotage des Projets & Rédaction des Mémoires
+            <h1 className="font-serif text-3xl font-semibold text-foreground">
+              Commandes en cours
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-              Toutes les informations, consignes, plans et fichiers transmis par les étudiants pour rédiger leurs mémoires.
+            <p className="mt-1 text-sm text-muted-foreground">
+              Mise à jour automatique toutes les 15 secondes.
             </p>
           </div>
-
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="px-3 py-1 text-xs font-semibold">
-              {projects.length} projet(s) enregistré(s)
-            </Badge>
-          </div>
-        </div>
-
-        {!activeProject ? (
-          <div className="rounded-2xl border border-border/80 bg-card p-12 text-center shadow-md">
-            <Briefcase className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 font-serif text-xl font-bold text-foreground">
-              Aucune commande enregistrée pour le moment
-            </h3>
-            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              Dès qu'un étudiant valide une commande sur le site, son dossier complet (coordonnées, plan, consignes et documents) s'ouvre automatiquement ici.
-            </p>
-            <div className="mt-6 flex justify-center gap-3">
-              <Button onClick={syncProjects} variant="outline" size="sm" className="gap-2">
-                <RefreshCw className="h-4 w-4" />
-                Actualiser
+            {unseen.length > 0 && (
+              <Button variant="secondary" size="sm" onClick={markAllSeen}>
+                <Bell className="mr-1 h-4 w-4" />
+                Tout marquer comme lu
               </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* PIPELINE LINÉAIRE EN 5 ÉTAPES */}
-            <div className="rounded-xl border border-border/80 bg-muted/20 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Pipeline Officiel : De l'Inscription à la Livraison
-            </h4>
-            <Badge className="font-mono text-xs bg-primary text-primary-foreground">
-              {activeProject.id}
-            </Badge>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-center text-xs">
-            {/* 1. Inscrit */}
-            <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-semibold">
-              <CheckCircle2 className="h-4 w-4 mx-auto mb-1 text-emerald-600" />
-              1. Inscrit
-              <span className="block text-[10px] text-muted-foreground font-normal">Coordonnées client</span>
-            </div>
-
-            {/* 2. Envoyé & Reçu */}
-            <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-semibold">
-              <CheckCircle2 className="h-4 w-4 mx-auto mb-1 text-emerald-600" />
-              2. Envoyé & Reçu
-              <span className="block text-[10px] text-muted-foreground font-normal">Consignes & fichiers</span>
-            </div>
-
-            {/* 3. Projet Créé */}
-            <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-semibold">
-              <CheckCircle2 className="h-4 w-4 mx-auto mb-1 text-emerald-600" />
-              3. Projet Créé
-              <span className="block text-[10px] text-muted-foreground font-normal">Dossier ouvert</span>
-            </div>
-
-            {/* 4. Mémoire en cours de rédaction */}
-            <div
-              className={`p-2.5 rounded-lg border font-semibold transition-all ${
-                activeProject.paymentConfirmed
-                  ? "bg-amber-500/15 border-amber-500/40 text-amber-800 dark:text-amber-300"
-                  : "bg-muted/40 border-border/60 text-muted-foreground"
-              }`}
-            >
-              {activeProject.paymentConfirmed ? (
-                <PenTool className="h-4 w-4 mx-auto mb-1 text-amber-600" />
+            )}
+            <Button variant="outline" size="sm" onClick={() => query.refetch()}>
+              {query.isFetching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Clock className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                "Actualiser"
               )}
-              4. En cours de rédaction
-              <span className="block text-[10px] text-muted-foreground font-normal">
-                {activeProject.paymentConfirmed ? "Paiement validé" : "Cocher paiement reçu"}
-              </span>
-            </div>
-
-            {/* 5. Terminé et envoyé */}
-            <div
-              className={`p-2.5 rounded-lg border font-semibold transition-all ${
-                activeProject.isCompleted
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "bg-muted/40 border-border/60 text-muted-foreground"
-              }`}
-            >
-              {activeProject.isCompleted ? (
-                <CheckCircle2 className="h-4 w-4 mx-auto mb-1 text-white" />
-              ) : (
-                <Lock className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-              )}
-              5. Terminé & Envoyé
-              <span className="block text-[10px] font-normal opacity-85">
-                {activeProject.isCompleted ? "Mémoire & Certificat prêts" : "Cocher pour livrer"}
-              </span>
-            </div>
+            </Button>
           </div>
         </div>
 
-        {/* Layout : Liste des Projets à gauche / Fiche Complète & Directives à droite */}
-        <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
-          {/* Colonne Gauche : Liste des Projets */}
-          <div className="space-y-3">
-            <h3 className="font-serif text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Briefcase className="h-4 w-4 text-primary" />
-                Liste des Commandes
-              </span>
-              <span className="text-[11px] font-mono">{projects.length}</span>
-            </h3>
-
-            <div className="space-y-2.5 max-h-[750px] overflow-y-auto pr-1">
-              {projects.map((proj) => {
-                const isSelected = proj.orderId === activeProject.orderId;
-                return (
-                  <div
-                    key={proj.orderId}
-                    onClick={() => setSelectedProjectId(proj.orderId)}
-                    className={`rounded-2xl border p-4 transition-all cursor-pointer ${
-                      isSelected
-                        ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/30"
-                        : "border-border/70 bg-card hover:border-border hover:bg-muted/30 shadow-xs"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-bold text-primary">
-                        {proj.id}
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        {proj.paymentConfirmed ? (
-                          <Badge className="bg-emerald-600 text-white text-[10px] px-2 py-0">
-                            Payé
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-400 px-2 py-0">
-                            Attente Paiement
-                          </Badge>
-                        )}
-                        {proj.isCompleted && (
-                          <Badge className="bg-indigo-600 text-white text-[10px] px-2 py-0">
-                            Livré
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <h4 className="mt-2 text-xs font-serif font-bold text-foreground line-clamp-2">
-                      {proj.subject}
-                    </h4>
-
-                    <div className="mt-2 pt-2 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
-                      <span className="font-medium text-foreground">
-                        {proj.clientName || "Étudiant"}
-                      </span>
-                      <span className="font-mono font-bold text-primary">
-                        {proj.priceFcfa?.toLocaleString("fr-FR")} FCFA
-                      </span>
-                    </div>
-
-                    <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span>{proj.pages ? `${proj.pages} pages` : "Standard"}</span>
-                      <span>Échéance : {new Date(proj.deadline).toLocaleDateString("fr-FR")}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+        {query.isError ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+            {(query.error as Error).message}
           </div>
+        ) : null}
 
-          {/* Colonne Droite : Dossier de Rédaction Académique Complet */}
-          <div className="space-y-6">
-            {/* Carte En-Tête du Projet Actif */}
-            <TiltCard className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md">
-                      {activeProject.id}
-                    </span>
-                    <Badge variant="outline" className="capitalize text-xs">
-                      {activeProject.documentType.replace("_", " ")}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      Échéance : <strong className="text-foreground">{new Date(activeProject.deadline).toLocaleDateString("fr-FR", { dateStyle: "long" })}</strong>
-                    </span>
-                  </div>
+        {query.isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
+          </div>
+        ) : null}
 
-                  <h2 className="mt-3 font-serif text-xl sm:text-2xl font-bold text-foreground">
-                    {activeProject.subject}
-                  </h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {activeProject.academicLevel || "Enseignement Supérieur Gabon"}
-                  </p>
-                </div>
-
-                {/* Deux Actions Clés du Rédacteur / Administrateur */}
-                <div className="flex flex-wrap sm:flex-col gap-2 shrink-0">
-                  {/* Action 1 : Cocher Paiement Reçu */}
-                  <Button
-                    size="sm"
-                    variant={activeProject.paymentConfirmed ? "default" : "outline"}
-                    onClick={() => handleTogglePayment(activeProject.orderId)}
-                    className={`gap-2 text-xs font-semibold h-9 rounded-xl ${
-                      activeProject.paymentConfirmed
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-                        : "border-amber-500/50 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10"
-                    }`}
-                  >
-                    <CreditCard className="h-3.5 w-3.5" />
-                    <span>
-                      {activeProject.paymentConfirmed
-                        ? "✓ Paiement Reçu (En cours)"
-                        : "Cocher : Paiement Reçu"}
-                    </span>
-                  </Button>
-
-                  {/* Action 2 : Cocher Mémoire Terminé & Envoyé */}
-                  <Button
-                    size="sm"
-                    variant={activeProject.isCompleted ? "default" : "outline"}
-                    onClick={() => handleToggleCompleted(activeProject.orderId)}
-                    className={`gap-2 text-xs font-semibold h-9 rounded-xl ${
-                      activeProject.isCompleted
-                        ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
-                        : "border-border text-foreground hover:bg-accent"
-                    }`}
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>
-                      {activeProject.isCompleted
-                        ? "✓ Mémoire Terminé & Livré"
-                        : "Cocher : Mémoire Terminé"}
-                    </span>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Fiche Étudiant & Contacts Directs */}
-              <div className="mt-6 grid gap-3 rounded-xl border border-border/70 bg-muted/20 p-4 sm:grid-cols-2 lg:grid-cols-4 text-xs">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                    <User className="h-3.5 w-3.5 text-primary" /> Étudiant(e)
-                  </span>
-                  <p className="font-semibold text-foreground text-sm">
-                    {activeProject.clientName || "Non renseigné"}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {activeProject.clientEmail || "—"}
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                    <Phone className="h-3.5 w-3.5 text-emerald-600" /> WhatsApp Gabon
-                  </span>
-                  <p className="font-mono font-bold text-foreground text-sm">
-                    {activeProject.clientPhone || "+241 74 00 00 00"}
-                  </p>
-                  {activeProject.clientPhone && (
-                    <a
-                      href={`https://wa.me/${activeProject.clientPhone.replace(/[^0-9]/g, "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] text-emerald-600 hover:underline font-semibold"
-                    >
-                      <span>Ouvrir WhatsApp</span>
-                    </a>
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                    <FileText className="h-3.5 w-3.5 text-indigo-600" /> Volume & Délais
-                  </span>
-                  <p className="font-semibold text-foreground text-sm">
-                    {activeProject.pages || 60} pages
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Livraison le {new Date(activeProject.deadline).toLocaleDateString("fr-FR")}
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                    <DollarSign className="h-3.5 w-3.5 text-amber-600" /> Règlement FCFA
-                  </span>
-                  <p className="font-serif text-base font-bold text-primary">
-                    {activeProject.priceFcfa?.toLocaleString("fr-FR")} FCFA
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Mode : <strong className="text-foreground">{activeProject.paymentMethod || "Airtel Money"}</strong>
-                  </p>
-                </div>
-              </div>
-            </TiltCard>
-
-            {/* Onglets Simples du Projet : Dossier Client, Jalons & Messagerie */}
-            <Tabs defaultValue="dossier" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 rounded-xl p-1 bg-muted/50 border border-border/80">
-                <TabsTrigger value="dossier" className="gap-2 text-xs font-semibold">
-                  <FileText className="h-4 w-4 text-primary" />
-                  <span>Dossier & Directives Client</span>
-                </TabsTrigger>
-                <TabsTrigger value="jalons" className="gap-2 text-xs font-semibold">
-                  <CircleDot className="h-4 w-4 text-amber-600" />
-                  <span>Jalons du Mémoire ({activeProject.milestones.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="chat" className="gap-2 text-xs font-semibold">
-                  <MessageSquare className="h-4 w-4 text-emerald-600" />
-                  <span>Messagerie avec le Client ({activeProject.messages.length})</span>
-                </TabsTrigger>
-              </TabsList>
-
-              {/* ONGLET 1 : DOSSIER COMPLET & DIRECTIVES DU CLIENT */}
-              <TabsContent value="dossier" className="mt-4 space-y-4">
-                {/* 1. Plan de Rédaction fourni */}
-                <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-xs space-y-3">
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
-                    <h4 className="font-serif text-sm font-bold text-foreground flex items-center gap-2">
-                      <Target className="h-4 w-4 text-primary" />
-                      Plan de Rédaction & Structure demandée
-                    </h4>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        navigator.clipboard.writeText(activeProject.planText || "");
-                        toast.success("Plan copié dans le presse-papier !");
-                      }}
-                      className="text-xs h-7 gap-1"
-                    >
-                      <Copy className="h-3 w-3" />
-                      <span>Copier</span>
-                    </Button>
-                  </div>
-
-                  {activeProject.planText ? (
-                    <div className="rounded-xl border border-border/60 bg-muted/30 p-4 font-mono text-xs whitespace-pre-line leading-relaxed text-foreground max-h-[300px] overflow-y-auto">
-                      {activeProject.planText}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic p-3 bg-muted/20 rounded-lg">
-                      Aucun plan spécifique fourni lors de la commande. Vous devez concevoir et proposer un plan détaillé en 2 parties et 4 chapitres au Jalon 1.
-                    </p>
-                  )}
-                </div>
-
-                {/* 2. Consignes Pédagogiques & Démarche */}
-                <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-xs space-y-3">
-                  <h4 className="font-serif text-sm font-bold text-foreground flex items-center gap-2 border-b border-border/60 pb-2.5">
-                    <FileCheck2 className="h-4 w-4 text-emerald-600" />
-                    Consignes Pédagogiques & Exigences du Directeur de Mémoire
-                  </h4>
-                  <div className="rounded-xl border border-border/60 bg-muted/30 p-4 text-xs leading-relaxed text-foreground">
-                    {activeProject.guidelinesText || "Aucune consigne spécifique transmise."}
-                  </div>
-                </div>
-
-                {/* 3. Page de Garde Souhaitée */}
-                <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-xs space-y-3">
-                  <h4 className="font-serif text-sm font-bold text-foreground flex items-center gap-2 border-b border-border/60 pb-2.5">
-                    <ShieldCheck className="h-4 w-4 text-amber-600" />
-                    Page de Garde & Mentions Officielles
-                  </h4>
-                  <div className="rounded-xl border border-border/60 bg-muted/30 p-4 text-xs leading-relaxed text-foreground">
-                    {activeProject.coverPageText || "Informations standards de l'Université Omar Bongo."}
-                  </div>
-                </div>
-
-                {/* 4. Documents & Fichiers Fournis par le Client */}
-                <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-xs space-y-3">
-                  <h4 className="font-serif text-sm font-bold text-foreground flex items-center gap-2 border-b border-border/60 pb-2.5">
-                    <Paperclip className="h-4 w-4 text-indigo-600" />
-                    Fichiers & Pièces Jointes de l'Étudiant ({activeProject.filePaths?.length || 0})
-                  </h4>
-
-                  {activeProject.filePaths && activeProject.filePaths.length > 0 ? (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {activeProject.filePaths.map((filePath, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-3 text-xs"
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            <FileText className="h-4 w-4 text-primary shrink-0" />
-                            <span className="font-mono truncate">{filePath.split("/").pop()}</span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              if (filePath.startsWith("data:") || filePath.startsWith("http") || filePath.startsWith("blob:")) {
-                                const a = document.createElement("a");
-                                a.href = filePath;
-                                a.download = filePath.split("/").pop()?.replace(/^.*_/, "") || "document_etudiant.pdf";
-                                a.target = "_blank";
-                                a.click();
-                              } else {
-                                toast.info(`Fichier enregistré : ${filePath.split("/").pop()}`);
-                              }
-                            }}
-                            className="h-7 text-xs gap-1 text-primary shrink-0"
-                          >
-                            <Download className="h-3 w-3" />
-                            <span>Télécharger</span>
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic p-3 bg-muted/20 rounded-lg">
-                      Aucun fichier joint lors de la commande initiale.
-                    </p>
-                  )}
-                </div>
-              </TabsContent>
-
-              {/* ONGLET 2 : JALONS DU MÉMOIRE */}
-              <TabsContent value="jalons" className="mt-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-serif text-sm font-bold text-foreground">
-                    Jalons de Rédaction & Suivi Étudiant
-                  </h4>
-                  <Button
-                    size="sm"
-                    onClick={() => setShowMilestoneModal(true)}
-                    className="gap-1.5 text-xs h-8 bg-primary text-primary-foreground font-semibold"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>Nouveau Jalon</span>
-                  </Button>
-                </div>
-
-                <div className="space-y-3">
-                  {activeProject.milestones.map((ms) => (
-                    <div
-                      key={ms.id}
-                      className="rounded-2xl border border-border/80 bg-card p-5 shadow-xs space-y-3"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary font-mono text-xs font-bold">
-                            {ms.stepNumber}
+        <div className="grid gap-4">
+          {(query.data ?? []).map((o) => {
+            const isNew = o.status === "documents_envoyes" && !o.writer_seen_at;
+            return (
+              <Card
+                key={o.id}
+                className={
+                  isNew
+                    ? "border-2 border-indigo-400 shadow-md ring-2 ring-indigo-100"
+                    : "border-border"
+                }
+              >
+                <CardHeader>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        {isNew && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                            <Bell className="h-3 w-3" /> Nouveau
                           </span>
-                          <h5 className="font-serif text-sm font-bold text-foreground">
-                            {ms.title}
-                          </h5>
-                        </div>
-                        <Badge
-                          variant={ms.status === "valide" ? "default" : "secondary"}
-                          className={`text-[10px] capitalize ${
-                            ms.status === "valide" ? "bg-emerald-600 text-white" : ""
-                          }`}
-                        >
-                          {ms.status.replace("_", " ")}
-                        </Badge>
-                      </div>
-
-                      <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-line bg-muted/20 p-3 rounded-lg border border-border/40">
-                        {ms.contentPreview}
-                      </p>
-
-                      {ms.writerNotes && (
-                        <div className="text-xs text-muted-foreground italic flex items-start gap-1.5">
-                          <span className="font-semibold text-primary not-italic shrink-0">
-                            Note pour le client :
-                          </span>
-                          <span>{ms.writerNotes}</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-
-              {/* ONGLET 3 : MESSAGERIE PROJET */}
-              <TabsContent value="chat" className="mt-4 space-y-4">
-                <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs">
-                  <div className="border-b border-border/60 p-4 bg-muted/20 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
-                        ET
-                      </div>
-                      <div>
-                        <h4 className="font-serif text-sm font-bold text-foreground">
-                          {activeProject.clientName || "Étudiant"}
-                        </h4>
-                        <span className="text-[11px] text-muted-foreground">
-                          {activeProject.academicLevel || "Université Omar Bongo"}
+                        )}
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {o.id.slice(0, 8)}
                         </span>
+                        {isNew && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-[11px] text-indigo-700 hover:bg-indigo-50 hover:text-indigo-900"
+                            onClick={() => markOneSeen(o.id)}
+                          >
+                            ✓ Marquer comme lu
+                          </Button>
+                        )}
                       </div>
+                      <CardTitle className="mt-1 font-serif text-lg">{o.subject}</CardTitle>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {o.full_name} · {o.email}
+                      </p>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      Projet {activeProject.id}
+                    <Badge variant="outline">
+                      {STATUS_LABEL[o.status] ?? o.status}
                     </Badge>
                   </div>
-
-                  {/* Flux des Messages */}
-                  <div className="p-4 sm:p-6 space-y-4 max-h-[380px] overflow-y-auto bg-background/50">
-                    {activeProject.messages.length === 0 ? (
-                      <p className="text-center text-xs text-muted-foreground py-8 italic">
-                        Aucun message échangé pour l'instant. Envoyez le premier mot à l'étudiant ci-dessous !
-                      </p>
-                    ) : (
-                      activeProject.messages.map((msg) => {
-                        const isWriter = msg.sender === "redacteur";
-                        return (
-                          <div
-                            key={msg.id}
-                            className={`flex flex-col ${isWriter ? "items-end" : "items-start"}`}
-                          >
-                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mb-1">
-                              <span className="font-semibold text-foreground">
-                                {msg.senderName}
-                              </span>
-                              <span>·</span>
-                              <span>
-                                {new Date(msg.createdAt).toLocaleTimeString("fr-FR", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </span>
-                            </div>
-                            <div
-                              className={`rounded-2xl px-4 py-2.5 text-xs max-w-lg leading-relaxed shadow-xs ${
-                                isWriter
-                                  ? "bg-primary text-primary-foreground rounded-tr-none"
-                                  : "bg-muted/80 text-foreground border border-border/60 rounded-tl-none"
-                              }`}
-                            >
-                              {msg.content}
-                            </div>
-                          </div>
-                        );
-                      })
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                    <div>Type : {o.document_type}</div>
+                    <div>Pages : {o.pages ?? "—"}</div>
+                    <div>
+                      Deadline :{" "}
+                      {o.deadline
+                        ? new Date(o.deadline).toLocaleDateString("fr-FR")
+                        : "—"}
+                    </div>
+                    <div>Montant : {o.price_fcfa ? `${o.price_fcfa.toLocaleString("fr-FR")} FCFA` : "—"}</div>
+                  </div>
+                  <div className="mt-3 flex items-center gap-4 text-sm">
+                    <span className="inline-flex items-center gap-1 text-muted-foreground">
+                      <FileText className="h-4 w-4" />
+                      {o.file_paths?.length ?? 0} document(s)
+                    </span>
+                    {o.documents_submitted_at && (
+                      <span className="inline-flex items-center gap-1 text-emerald-700">
+                        <Lock className="h-4 w-4" />
+                        Soumis le{" "}
+                        {new Date(o.documents_submitted_at).toLocaleString("fr-FR", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                      </span>
                     )}
                   </div>
 
-                  {/* Formulaire de Saisie Message */}
-                  <form onSubmit={handleSendChat} className="border-t border-border/60 p-3 bg-muted/20 flex gap-2">
-                    <Input
-                      placeholder="Écrivez votre message à l'étudiant..."
-                      value={chatMessage}
-                      onChange={(e) => setChatMessage(e.target.value)}
-                      className="text-xs h-10 rounded-xl"
-                    />
-                    <Button type="submit" size="sm" className="h-10 px-4 gap-1.5 rounded-xl bg-primary text-primary-foreground">
-                      <Send className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Envoyer</span>
-                    </Button>
-                  </form>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
+                  <div className="mt-4 border-t border-border pt-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(o.id)}
+                      className="flex w-full items-center justify-between text-sm font-medium text-foreground hover:text-primary"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Bell className="h-4 w-4" />
+                        Historique des notifications
+                        <Badge variant="secondary" className="ml-1">
+                          {STATUS_LABEL[o.status] ?? o.status}
+                        </Badge>
+                      </span>
+                      {expanded.has(o.id) ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </button>
+                    {expanded.has(o.id) && (
+                      <ol className="mt-3 space-y-2">
+                        {buildHistory(o as OrderRow).map((ev, i) => (
+                          <li key={i} className="flex items-start gap-3 text-sm">
+                            <CircleDot className="mt-0.5 h-4 w-4 text-primary" />
+                            <div className="flex-1">
+                              <div className="font-medium text-foreground">{ev.label}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(ev.at).toLocaleString("fr-FR", {
+                                  dateStyle: "long",
+                                  timeStyle: "short",
+                                })}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+          {query.data && query.data.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card p-10 text-center">
+              <Inbox className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="mt-3 text-sm text-muted-foreground">Aucune commande pour le moment.</p>
+            </div>
+          ) : null}
         </div>
-        </>
-      )}
       </div>
-
-      {/* Modal d'Ajout de Jalon */}
-      <Dialog open={showMilestoneModal} onOpenChange={setShowMilestoneModal}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="font-serif text-lg">Publier un Nouveau Jalon</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Ce jalon sera immédiatement accessible en consultation par l'étudiant dans son Espace Client.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleAddMilestoneSubmit} className="space-y-4 mt-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="m-title" className="text-xs font-semibold">Titre du Jalon *</Label>
-              <Input
-                id="m-title"
-                placeholder="Ex: Jalon 2 : Revue de Littérature & Cadre Conceptuel"
-                value={newMilestoneTitle}
-                onChange={(e) => setNewMilestoneTitle(e.target.value)}
-                required
-                className="text-xs"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="m-content" className="text-xs font-semibold">Contenu / Extrait Académique *</Label>
-              <Textarea
-                id="m-content"
-                rows={5}
-                placeholder="Détaillez le contenu, les hypothèses ou la synthèse de l'étape..."
-                value={newMilestonePreview}
-                onChange={(e) => setNewMilestonePreview(e.target.value)}
-                required
-                className="text-xs leading-relaxed"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="m-notes" className="text-xs font-semibold">Remarques pour l'étudiant (facultatif)</Label>
-              <Input
-                id="m-notes"
-                placeholder="Ex: Merci de soumettre ce plan à votre directeur de recherche pour validation."
-                value={newMilestoneNotes}
-                onChange={(e) => setNewMilestoneNotes(e.target.value)}
-                className="text-xs"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowMilestoneModal(false)}>
-                Annuler
-              </Button>
-              <Button type="submit" size="sm" className="bg-primary text-primary-foreground font-semibold">
-                Publier le Jalon
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </main>
-    </RoleGuard>
   );
 }
-export default WriterDashboard;

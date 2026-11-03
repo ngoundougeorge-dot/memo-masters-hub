@@ -10,7 +10,6 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "sonner";
-import { AuthProvider } from "@/integrations/firebase";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -75,29 +74,23 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
-import { PwaInstallPrompt } from "../components/PwaInstallPrompt";
-import { AuroraBackground } from "../components/AuroraBackground";
-
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "MémoirePro Gabon — Rédaction de mémoires et rapports à Libreville" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "MémoirePro — Rédaction de mémoires et rapports de stage" },
       {
         name: "description",
         content:
-          "Service de rédaction personnalisée de mémoires (licence, master) et rapports de stage au Gabon (UOB, USTM, INSG). Sources rigoureusement citées, garantie anti-plagiat, tarifs en Franc CFA (XAF), paiement Airtel Money et Moov Money.",
+          "Service de rédaction personnalisée de mémoires (licence, master) et rapports de stage. Sources correctement citées, garantie anti-plagiat, tarifs en Franc CFA, paiement Mobile Money.",
       },
-      { name: "theme-color", content: "#07090E" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "author", content: "MémoirePro Gabon" },
-      { property: "og:title", content: "MémoirePro Gabon — Rédaction de mémoires et rapports à Libreville" },
+      { name: "author", content: "MémoirePro" },
+      { property: "og:title", content: "MémoirePro — Rédaction de mémoires et rapports de stage" },
       {
         property: "og:description",
         content:
-          "Rédaction académique personnalisée au Gabon, sans plagiat. Tarifs en FCFA, paiement Airtel Money et Moov Money.",
+          "Rédaction académique personnalisée, sans plagiat. Tarifs en FCFA, paiement Orange Money, MTN, Wave.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -105,7 +98,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -136,31 +128,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
-  useEffect(() => {
-    // Service Worker registration for PWA
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("/sw.js")
-          .then((reg) => {
-            console.log("[PWA] Service Worker registered with scope:", reg.scope);
-          })
-          .catch((err) => {
-            console.warn("[PWA] Service Worker registration failed:", err);
-          });
-      });
-    }
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AuroraBackground />
-        <Outlet />
-        <PwaInstallPrompt />
-        <Toaster position="top-center" richColors />
-      </AuthProvider>
+      <Outlet />
+      <Toaster position="top-center" richColors />
     </QueryClientProvider>
   );
 }
